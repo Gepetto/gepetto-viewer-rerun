@@ -1,0 +1,19 @@
+version = 1
+requires-python = ">=3.10"
+
+[[package]]
+name = "gepetto-viewer-rerun"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "rerun" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "rerun", specifier = ">=1.0.30" }]
+
+[[package]]
+name = "rerun"
+version = "1.0.30"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/95/d9/dd0334d2517b8ab0b3de0fff3e0370902c14057b47d2e15207a327a433a2/rerun-1.0.30.zip", hash = "sha256:33bf86cb3d9dcdb51c6a6712b0cefcdebd7cdffce654d6bc9c8d7aae51e500e9", size = 19155 }
