@@ -73,20 +73,17 @@ class Gui:
         assert all(isinstance(name, str) for name in [sceneName, wid]), \
             "Parameters 'sceneName' and 'wid' must be strings"
         
-        if self.__getSceneIndex(sceneName) == -1:
+        index = self.__getSceneIndex(sceneName)
+        if index == -1:
             logger.error(f"addSceneToWindow(): Unknown sceneName '{sceneName}'.")
             return False
         elif wid not in self.windowList:
             logger.error(f"addSceneToWindow(): Unknown windowName '{wid}'.")
             return False
-        
-        index = self.__getSceneIndex(sceneName)
-        if index != -1:
-            rec = rr.new_recording(application_id=wid, recording_id=sceneName, spawn=True)
-            self.sceneList[index].setRec(rec)
-            return True
-        logger.error(f"Failed to find sceneName '{sceneName}' in scene list.")
-        return False
+    
+        rec = rr.new_recording(application_id=wid, recording_id=sceneName, spawn=True)
+        self.sceneList[index].setRec(rec)
+        return True
     
     def __parse_entity(self, entityName, entity, entityType):
         """
