@@ -1,4 +1,4 @@
-from src.client import Client
+from src.gepetto_viewer_rerun.client import Client
 import logging
 
 logging.basicConfig(filename='basic_geometries.log', filemode='w', level=logging.DEBUG)
