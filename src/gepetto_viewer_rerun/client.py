@@ -43,7 +43,7 @@ class Gui:
         
         self.sceneList = []
         self.windowList = []
-        self.entityList = [[]] * len(Archetype)
+        self.entityList = [[] for _ in range(len(Archetype))]
     
     def createWindow(self, name: str):
         assert isinstance(name, str), "Parameter 'name' must be a string"
