@@ -1,7 +1,5 @@
 # Python-generated files
-__pycache__/
-src/gepetto_viewer_rerun/__pycache__/
-examples/__pycache__/
+*/__pycache__/
 
 *.py[oc]
 build/
