@@ -25,7 +25,6 @@ class Archetype(Enum):
     POINTS3D = 6
     
 
-@dataclass
 class Client:
     def __init__(self):
         self.gui = Gui()
