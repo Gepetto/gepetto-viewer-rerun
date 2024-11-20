@@ -1,5 +1,7 @@
 import rerun as rr
 from dataclasses import dataclass
+from typing import Union
+import pathlib
 
 
 @dataclass
@@ -9,5 +11,4 @@ class Entity:
 
 @dataclass
 class MeshFromPath:
-    def __init__(self, path: str):
-        self.path = path
+    path: Union[str, pathlib.Path]
