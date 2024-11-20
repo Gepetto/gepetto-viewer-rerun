@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class Archetype(Enum):
     ARROWS3D = 0
-    BoxeS3D = 1
+    BOXES3D = 1
     CAPSULES3D = 2
     LINESTRIPS3D = 3
     MESH3D = 4
@@ -144,7 +144,7 @@ class Gui:
             colors=[(125, 125, 125)],
             fill_mode="Solid",
         )
-        self._parse_entity(floorName, floor, Archetype.BoxeS3D)
+        self._parse_entity(floorName, floor, Archetype.BOXES3D)
         return True
     
     def addBox(
@@ -166,7 +166,7 @@ class Gui:
             fill_mode="Solid",
             labels=[boxName],
         )
-        self._parse_entity(boxName, box, Archetype.BoxeS3D)
+        self._parse_entity(boxName, box, Archetype.BOXES3D)
         return True
 
     def addArrow(
