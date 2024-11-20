@@ -1,8 +1,9 @@
 import logging
-import numpy as np
-from math import tau
 from enum import Enum
+from math import tau
 from typing import List, Union
+
+import numpy as np
 import rerun as rr
 
 from .entity import Entity, MeshFromPath
@@ -349,21 +350,21 @@ class Gui:
         entity = self._get_entity(entityName)
         rec = self._getRecording(groupName)
 
-        if type(entity.archetype) == MeshFromPath:
+        if isinstance(entity.archetype, MeshFromPath):
             rr.log_file_from_path(file_path=entity.archetype.path)
             logger.info(f"Logging Mesh from file named '{entity.name}'.")
             return True
-        elif type(entity.archetype) == rr.archetypes.arrows3d.Arrows3D:
+        elif isinstance(entity.archetype, rr.archetypes.arrows3d.Arrows3D):
             logger.info(f"Logging Arrows3D named '{entity.name}'.")
-        elif type(entity.archetype) == rr.archetypes.boxes3d.Boxes3D:
+        elif isinstance(entity.archetype, rr.archetypes.boxes3d.Boxes3D):
             logger.info(f"Logging Boxes3D named '{entity.name}'.")
-        elif type(entity.archetype) == rr.archetypes.capsules3d.Capsules3D:
+        elif isinstance(entity.archetype, rr.archetypes.capsules3d.Capsules3D):
             logger.info(f"Logging Capsules3D named '{entity.name}'.")
-        elif type(entity.archetype) == rr.archetypes.line_strips3d.LineStrips3D:
+        elif isinstance(entity.archetype, rr.archetypes.line_strips3d.LineStrips3D):
             logger.info(f"Logging LineStrip3D named '{entity.name}'.")
-        elif type(entity.archetype) == rr.archetypes.mesh3d.Mesh3D:
+        elif isinstance(entity.archetype, rr.archetypes.mesh3d.Mesh3D):
             logger.info(f"Logging Mesh3D named '{entity.name}'.")
-        elif type(entity.archetype) == rr.archetypes.points3d.Points3D:
+        elif isinstance(entity.archetype, rr.archetypes.points3d.Points3D):
             logger.info(f"Logging Points3D named '{entity.name}'.")
         else:
             return False
