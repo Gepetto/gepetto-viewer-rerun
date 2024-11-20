@@ -29,7 +29,6 @@ class Client:
     def __init__(self):
         self.gui = Gui()
 
-@dataclass
 class Gui:
     def __init__(self):
         """
