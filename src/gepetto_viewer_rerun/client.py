@@ -29,6 +29,9 @@ class Client:
     def __init__(self):
         self.gui = Gui()
 
+    def __repr__(self):
+        return f"Client({self.gui})"
+
 class Gui:
     def __init__(self):
         """
@@ -43,6 +46,13 @@ class Gui:
         self.windowList = []
         self.entityList = [[] for _ in range(len(Archetype))]
     
+    def __repr__(self):
+        return (
+            f"Gui(windowList={self.windowList}, "
+            f"sceneList (size: {len(self.sceneList)}) = {self.sceneList}, "
+            f"entityList (size: {len(self.entityList)}) = {self.entityList})"
+        )
+
     def createWindow(self, name: str):
         assert isinstance(name, str), "Parameter 'name' must be a string"
         
