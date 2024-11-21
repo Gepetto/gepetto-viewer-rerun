@@ -80,6 +80,15 @@ class Gui:
     def getSceneList(self):
         return [scene.name for scene in self.sceneList]
 
+    def getWindowID(self, name: str):
+        assert isinstance(name, str), "Parameter 'name' must be a string"
+
+        if name not in self.windowList:
+            logging.error(f"getWindowID(): Unknown windowName '{name}'.")
+            return ""
+        logger.info("getWindowID() only checks if window exists and return its name.")
+        return name
+
     def _getSceneIndex(self, sceneName: str):
         for index, scene in enumerate(self.sceneList):
             if scene.name == sceneName:
