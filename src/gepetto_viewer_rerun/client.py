@@ -74,6 +74,12 @@ class Gui:
         )
         logger.info(msg)
 
+    def getWindowList(self):
+        return self.windowList
+
+    def getSceneList(self):
+        return [scene.name for scene in self.sceneList]
+
     def _getSceneIndex(self, sceneName: str):
         for index, scene in enumerate(self.sceneList):
             if scene.name == sceneName:
