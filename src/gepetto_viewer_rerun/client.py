@@ -89,6 +89,13 @@ class Gui:
         logger.info("getWindowID() only checks if window exists and return its name.")
         return name
 
+    def getNodeList(self):
+        entitiesName = []
+        for entity_type in self.entityList:
+            for entity in entity_type:
+                entitiesName.append(entity.name)
+        return self.getWindowList() + self.getSceneList() + entitiesName
+
     def _getSceneIndex(self, sceneName: str):
         for index, scene in enumerate(self.sceneList):
             if scene.name == sceneName:
