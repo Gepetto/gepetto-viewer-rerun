@@ -1,5 +1,5 @@
 import rerun as rr
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Union, List
 import pathlib
 from .scene import Scene

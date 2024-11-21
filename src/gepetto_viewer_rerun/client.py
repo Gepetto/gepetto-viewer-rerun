@@ -231,21 +231,24 @@ class Gui:
         self._parseEntity(name, arrow, Archetype.ARROWS3D)
         return True
 
-    def resizeArrow(self, arrowName: str, radius: Union[int, float], length: Union[int, float]):
-        assert isinstance(
-            arrowName, str), "Parameter 'arrowName' must be a string"
-        assert all(isinstance(x, (int, float)) for x in [radius, length]), \
-            "Parameters 'radius' and 'length' must be a numbers"
+    def resizeArrow(
+        self, arrowName: str, radius: Union[int, float], length: Union[int, float]
+    ):
+        assert isinstance(arrowName, str), "Parameter 'arrowName' must be a string"
+        assert all(
+            isinstance(x, (int, float)) for x in [radius, length]
+        ), "Parameters 'radius' and 'length' must be a numbers"
 
         def createArrow(
             arrowName: str,
             radius: Union[int, float],
             length: Union[int, float],
-            colors: List[Union[int, float]]
+            colors: List[Union[int, float]],
         ):
             angle = np.arange(start=0, stop=tau, step=tau)
             vectors = np.column_stack(
-                [np.sin(angle) * length, np.zeros(1), np.cos(angle) * length])
+                [np.sin(angle) * length, np.zeros(1), np.cos(angle) * length]
+            )
             arrow = rr.Arrows3D(
                 radii=[[radius]],
                 vectors=vectors,
@@ -254,20 +257,21 @@ class Gui:
             )
             return arrow
 
-        charIndex = arrowName.find('/')
+        charIndex = arrowName.find("/")
         # If arrowName contains '/' then search for the scene
         if charIndex != -1 and charIndex != len(arrowName) - 1:
             sceneName = arrowName[:charIndex]
             sceneIndex = self._getSceneIndex(sceneName)
             # Check if scene exists
             if sceneIndex != -1:
-                entityName = arrowName[charIndex + 1:]
+                entityName = arrowName[charIndex + 1 :]
                 entity = self._getEntity(entityName)
                 scene = self.sceneList[sceneIndex]
                 # if `entity` exists in `scene` then log it
                 if entity and self._isEntityInScene(entity, scene):
                     newArrow = createArrow(
-                        arrowName, radius, length, entity.archetype.colors.pa_array)
+                        arrowName, radius, length, entity.archetype.colors.pa_array
+                    )
                     entity.archetype = newArrow
                     rr.log(entity.name, entity.archetype, recording=scene.rec)
 
@@ -287,12 +291,12 @@ class Gui:
 
         entity = self._getEntity(arrowName)
         if not entity:
-            logger.error(
-                f"resizeArrow(): Arrow '{arrowName}' does not exists.")
+            logger.error(f"resizeArrow(): Arrow '{arrowName}' does not exists.")
             return False
 
-        newArrow = createArrow(arrowName, radius, length,
-                                entity.archetype.colors.pa_array)
+        newArrow = createArrow(
+            arrowName, radius, length, entity.archetype.colors.pa_array
+        )
         entity.archetype = newArrow
         if entity.scenes:
             for scene in entity.scenes:
@@ -303,9 +307,7 @@ class Gui:
                 )
                 logger.info(msg)
         else:
-            msg = (
-                f"resizeArrow(): Resizing an Arrow3D named '{entity.name}'."
-            )
+            msg = f"resizeArrow(): Resizing an Arrow3D named '{entity.name}'."
             logger.info(msg)
         return True
 
@@ -324,8 +326,91 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
-        capsule = rr.Capsules3D(lengths=[height], radii=[radius], colors=[RGBAcolor])
+        capsule = rr.Capsules3D(
+            lengths=[height],
+            radii=[radius],
+            colors=[RGBAcolor],
+            labels=[name],
+        )
         self._parseEntity(name, capsule, Archetype.CAPSULES3D)
+        return True
+
+    def resizeCapsule(
+        self, capsuleName: str, radius: Union[int, float], length: Union[int, float]
+    ):
+        assert isinstance(capsuleName, str), "Parameter 'capsuleName' must be a string"
+        assert all(
+            isinstance(x, (int, float)) for x in [radius, length]
+        ), "Parameters 'radius' and 'length' must be a numbers"
+
+        def createCapsule(
+            capsuleName: str,
+            radius: Union[int, float],
+            length: Union[int, float],
+            colors: List[Union[int, float]],
+        ):
+            capsule = rr.Capsules3D(
+                radii=[radius],
+                lengths=length,
+                colors=colors,
+                labels=[capsuleName],
+            )
+            return capsule
+
+        charIndex = capsuleName.find("/")
+        # If capsuleName contains '/' then search for the scene
+        if charIndex != -1 and charIndex != len(capsuleName) - 1:
+            sceneName = capsuleName[:charIndex]
+            sceneIndex = self._getSceneIndex(sceneName)
+            # Check if scene exists
+            if sceneIndex != -1:
+                entityName = capsuleName[charIndex + 1 :]
+                entity = self._getEntity(entityName)
+                scene = self.sceneList[sceneIndex]
+                # if `entity` exists in `scene` then log it
+                if entity and self._isEntityInScene(entity, scene):
+                    newCapsule = createCapsule(
+                        capsuleName, radius, length, entity.archetype.colors.pa_array
+                    )
+                    entity.archetype = newCapsule
+                    rr.log(entity.name, entity.archetype, recording=scene.rec)
+
+                    msg = (
+                        f"resizeCapsule('{capsuleName}'): Logging new Capsules3D "
+                        f"'{entityName}' in '{sceneName}' scene."
+                    )
+                    logger.info(msg)
+                    return True
+                else:
+                    msg = (
+                        f"resizeCapsule({capsuleName}): Capsules3D '{entityName}' "
+                        f"does not exists in '{sceneName}' scene."
+                    )
+                    logger.error(msg)
+                    return False
+
+        entity = self._getEntity(capsuleName)
+        if not entity:
+            logger.error(
+                f"resizeCapsule(): Capsules3D '{capsuleName}' does not exists."
+            )
+            return False
+
+        newCapsule = createCapsule(
+            capsuleName, radius, length, entity.archetype.colors.pa_array
+        )
+        entity.archetype = newCapsule
+        if entity.scenes:
+            for scene in entity.scenes:
+                rr.log(entity.name, entity.archetype, recording=scene.rec)
+                msg = (
+                    f"resizeCapsule(): Logging a new Capsules3D named '{entity.name}' "
+                    f"in '{scene.name}' scene."
+                )
+                logger.info(msg)
+        else:
+            msg = f"resizeCapsule(): Resizing an Capsules3D named '{entity.name}'."
+            logger.info(msg)
         return True
 
     def addLine(
