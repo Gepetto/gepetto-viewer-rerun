@@ -161,6 +161,13 @@ class Gui:
                     return entity
         return None
 
+    def _isEntityInScene(self, entity: Entity, scene: Scene):
+        if entity and entity.scenes:
+            for s in entity.scenes:
+                if scene == s:
+                    return True
+        return False
+
     def addFloor(self, floorName: str):
         assert isinstance(floorName, str), "Parameter 'floorName' must be a string"
 
@@ -222,6 +229,84 @@ class Gui:
             labels=[name],
         )
         self._parseEntity(name, arrow, Archetype.ARROWS3D)
+        return True
+
+    def resizeArrow(self, arrowName: str, radius: Union[int, float], length: Union[int, float]):
+        assert isinstance(
+            arrowName, str), "Parameter 'arrowName' must be a string"
+        assert all(isinstance(x, (int, float)) for x in [radius, length]), \
+            "Parameters 'radius' and 'length' must be a numbers"
+
+        def createArrow(
+            arrowName: str,
+            radius: Union[int, float],
+            length: Union[int, float],
+            colors: List[Union[int, float]]
+        ):
+            angle = np.arange(start=0, stop=tau, step=tau)
+            vectors = np.column_stack(
+                [np.sin(angle) * length, np.zeros(1), np.cos(angle) * length])
+            arrow = rr.Arrows3D(
+                radii=[[radius]],
+                vectors=vectors,
+                colors=colors,
+                labels=[arrowName],
+            )
+            return arrow
+
+        charIndex = arrowName.find('/')
+        # If arrowName contains '/' then search for the scene
+        if charIndex != -1 and charIndex != len(arrowName) - 1:
+            sceneName = arrowName[:charIndex]
+            sceneIndex = self._getSceneIndex(sceneName)
+            # Check if scene exists
+            if sceneIndex != -1:
+                entityName = arrowName[charIndex + 1:]
+                entity = self._getEntity(entityName)
+                scene = self.sceneList[sceneIndex]
+                # if `entity` exists in `scene` then log it
+                if entity and self._isEntityInScene(entity, scene):
+                    newArrow = createArrow(
+                        arrowName, radius, length, entity.archetype.colors.pa_array)
+                    entity.archetype = newArrow
+                    rr.log(entity.name, entity.archetype, recording=scene.rec)
+
+                    msg = (
+                        f"resizeArrow('{arrowName}'): Logging new arrow "
+                        f"'{entityName}' in '{sceneName}' scene."
+                    )
+                    logger.info(msg)
+                    return True
+                else:
+                    msg = (
+                        f"resizeArrow({arrowName}): Arrow '{entityName}' "
+                        f"does not exists in '{sceneName}' scene."
+                    )
+                    logger.error(msg)
+                    return False
+
+        entity = self._getEntity(arrowName)
+        if not entity:
+            logger.error(
+                f"resizeArrow(): Arrow '{arrowName}' does not exists.")
+            return False
+
+        newArrow = createArrow(arrowName, radius, length,
+                                entity.archetype.colors.pa_array)
+        entity.archetype = newArrow
+        if entity.scenes:
+            for scene in entity.scenes:
+                rr.log(entity.name, entity.archetype, recording=scene.rec)
+                msg = (
+                    f"resizeArrow(): Logging a new Arrow3D named '{entity.name}' "
+                    f"in '{scene.name}' scene."
+                )
+                logger.info(msg)
+        else:
+            msg = (
+                f"resizeArrow(): Resizing an Arrow3D named '{entity.name}'."
+            )
+            logger.info(msg)
         return True
 
     def addCapsule(
