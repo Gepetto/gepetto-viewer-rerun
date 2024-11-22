@@ -51,7 +51,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "rerun-sdk", specifier = ">=0.18.2" }]
+requires-dist = [{ name = "rerun-sdk", specifier = ">=0.20" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pre-commit", specifier = ">=4.0.1" }]

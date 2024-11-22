@@ -46,10 +46,23 @@
         "url": "https://github.com/NixOS/nixpkgs/archive/cc2f28000298e1269cea6612cd06ec9979dd5d7f.tar.gz"
       }
     },
+    "rerun-update": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-K14eISXD38qaJOSSEgjAkx/zVTZ54460QWq+WsiGXqs=",
+        "type": "file",
+        "url": "https://github.com/NixOS/nixpkgs/pull/358093.patch"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://github.com/NixOS/nixpkgs/pull/358093.patch"
+      }
+    },
     "root": {
       "inputs": {
         "flake-parts": "flake-parts",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "rerun-update": "rerun-update"
       }
     }
   },

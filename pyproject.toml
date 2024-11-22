@@ -14,5 +14,5 @@ description = "Provide a `Client` class to visualize data with Rerun"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "rerun-sdk>=0.18.2"
+  "rerun-sdk>=0.20"
 ]
