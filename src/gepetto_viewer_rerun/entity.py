@@ -9,6 +9,7 @@ class Entity:
     name: str
     archetype: rr.archetypes
 
+
 @dataclass
 class MeshFromPath:
     path: Union[str, pathlib.Path]
