@@ -1,4 +1,9 @@
-{ nixpkgs, patches, system, ...  }:
+{
+  nixpkgs,
+  patches,
+  system,
+  ...
+}:
 let
   super = import nixpkgs { inherit system; };
 in

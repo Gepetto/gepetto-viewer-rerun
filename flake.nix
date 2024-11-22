@@ -15,7 +15,12 @@
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       systems = inputs.nixpkgs.lib.systems.flakeExposed;
       perSystem =
-        { pkgs, self', system, ... }:
+        {
+          pkgs,
+          self',
+          system,
+          ...
+        }:
         {
           _module.args.pkgs = import ./patched-nixpkgs.nix {
             inherit (inputs) nixpkgs;
@@ -26,7 +31,10 @@
             type = "app";
             program = pkgs.python3.withPackages (_: [ self'.packages.default ]);
           };
-          devShells.default = pkgs.mkShell { inputsFrom = [ self'.packages.default ]; };
+          devShells.default = pkgs.mkShell {
+            inputsFrom = [ self'.packages.default ];
+            packages = [ pkgs.rerun ];
+          };
           packages = {
             default = self'.packages.gepetto-viewer-rerun;
             gepetto-viewer-rerun = pkgs.python3Packages.callPackage ./. { };
