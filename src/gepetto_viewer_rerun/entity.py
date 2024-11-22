@@ -7,6 +7,7 @@ import pathlib
 @dataclass
 class Entity:
     name: str
+    log_name: str
     archetype: rr.archetypes
 
 
