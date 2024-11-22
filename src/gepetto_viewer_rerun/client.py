@@ -75,7 +75,7 @@ class Gui:
         logger.info(msg)
 
     def getWindowList(self):
-        return self.windowList
+        return [scene.name for scene in self.windowList]
 
     def getSceneList(self):
         return [scene.name for scene in self.sceneList]
