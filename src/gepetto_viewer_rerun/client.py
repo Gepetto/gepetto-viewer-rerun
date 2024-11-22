@@ -163,9 +163,7 @@ class Gui:
 
     def _isEntityInScene(self, entity: Entity, scene: Scene):
         if entity and entity.scenes:
-            for s in entity.scenes:
-                if scene == s:
-                    return True
+            return scene in entity.scenes
         return False
 
     def addFloor(self, floorName: str):
