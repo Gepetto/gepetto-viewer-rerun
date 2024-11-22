@@ -96,6 +96,11 @@ class Gui:
                 entitiesName.append(entity.name)
         return self.getWindowList() + self.getSceneList() + entitiesName
 
+    def nodeExists(self, nodeName: str):
+        assert isinstance(nodeName, str), "Parameter 'nodeName' must be a string"
+
+        return nodeName in self.getNodeList()
+
     def _getScene(self, sceneName: str):
         for scene in self.sceneList:
             if scene.name == sceneName:
@@ -180,14 +185,16 @@ class Gui:
         if charIndex != -1 and charIndex != len(archetypeName) - 1:
             scene = self._getScene(archetypeName[:charIndex])
             if scene is not None:
-                entity = Entity(archetypeName[charIndex + 1 :], archetype)
+                entity = Entity(
+                    archetypeName, archetypeName[charIndex + 1 :], archetype
+                )
                 self.entityList[entityType.value].append(entity)
 
                 if entityType == Archetype.MESH_FROM_PATH:
                     rr.log_file_from_path(file_path=entity.archetype.path)
                 else:
                     rr.log(
-                        archetypeName[charIndex:],
+                        entity.name,
                         entity.archetype,
                         recording=scene.rec,
                     )
@@ -198,7 +205,7 @@ class Gui:
                 logger.info(msg)
                 return
         # Put entity to entityList, wait for addToGroup() to be logged
-        entity = Entity(archetypeName, archetype)
+        entity = Entity(archetypeName, archetypeName, archetype)
         self.entityList[entityType.value].append(entity)
         msg = (
             f"_parseEntity() does not create a {entityType.name} for '{archetypeName}', "
