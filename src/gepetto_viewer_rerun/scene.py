@@ -1,5 +1,6 @@
 import rerun as rr
 from dataclasses import dataclass
+from typing import List
 
 
 @dataclass
@@ -9,3 +10,9 @@ class Scene:
 
     def setRec(self, rec: rr.RecordingStream):
         self.rec = rec
+
+
+@dataclass
+class Window:
+    name: str
+    scenes: List[Scene] | None = None

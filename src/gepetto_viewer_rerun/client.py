@@ -7,7 +7,7 @@ import numpy as np
 import rerun as rr
 
 from .entity import Entity, MeshFromPath
-from .scene import Scene
+from .scene import Scene, Window
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class Gui:
     def __init__(self):
         """
         sceneList : List of `Scene` class (name and associated recording)
-        windowList : List of all window names
+        windowList : List of all `Window` class (name and associated scenes)
         entityList : List containing every Rerun archetypes,
                     each archetypes contain a list of `Entity` class.
                     Use `Enum Archetype` to get indices.
@@ -54,7 +54,7 @@ class Gui:
     def createWindow(self, name: str):
         assert isinstance(name, str), "Parameter 'name' must be a string"
 
-        self.windowList.append(name)
+        self.windowList.append(Window(name))
         msg = (
             "createWindow() does not create any window, "
             "Rerun create both window and scene at the same time. "
@@ -96,27 +96,66 @@ class Gui:
                 entitiesName.append(entity.name)
         return self.getWindowList() + self.getSceneList() + entitiesName
 
-    def _getSceneIndex(self, sceneName: str):
-        for index, scene in enumerate(self.sceneList):
+    def _getScene(self, sceneName: str):
+        for scene in self.sceneList:
             if scene.name == sceneName:
-                return index
-        return -1
+                return scene
+        return None
+
+    def _getWindow(self, windowName: str):
+        for window in self.windowList:
+            if window.name == windowName:
+                return window
+        return None
 
     def addSceneToWindow(self, sceneName: str, wid: str):
         assert all(
             isinstance(name, str) for name in [sceneName, wid]
         ), "Parameters 'sceneName' and 'wid' must be strings"
 
-        index = self._getSceneIndex(sceneName)
-        if index == -1:
+        scene = self._getScene(sceneName)
+        if scene is None:
             logger.error(f"addSceneToWindow(): Unknown sceneName '{sceneName}'.")
             return False
-        elif wid not in self.windowList:
+        window = self._getWindow(wid)
+        if window is None:
             logger.error(f"addSceneToWindow(): Unknown windowName '{wid}'.")
             return False
-
+        if window.scenes is None:
+            window.scenes = [scene]
+        else:
+            window.scenes.append(scene)
         rec = rr.new_recording(application_id=wid, recording_id=sceneName, spawn=True)
-        self.sceneList[index].setRec(rec)
+        scene.setRec(rec)
+        return True
+
+    def setBackgroundColor(self, wid: str, RGBAcolor: List[Union[int, float]]):
+        assert isinstance(wid, str), "Parameter 'wid' must be a string"
+        assert isinstance(
+            RGBAcolor, (list, tuple)
+        ), "Parameter 'RGBAcolor' must be a list or tuple"
+
+        import rerun.blueprint as rrb
+
+        window = self._getWindow(wid)
+        if not window:
+            logger.error(f"setBackgroundColor(): Window '{wid}' do not exists.")
+            return False
+        if not window.scenes:
+            logger.error(
+                "setBackgroundColor(): Window " f"'{wid}' does not contain any scenes."
+            )
+            return False
+
+        blueprint = rrb.Blueprint(
+            rrb.Spatial3DView(
+                origin="/",
+                background=RGBAcolor,
+            ),
+            collapse_panels=True,
+        )
+        for scene in window.scenes:
+            rr.send_blueprint(blueprint, recording=scene.rec)
         return True
 
     def _parseEntity(
@@ -139,31 +178,22 @@ class Gui:
         charIndex = archetypeName.find("/")
         # If entityName contains '/' then search for the scene in self.sceneList
         if charIndex != -1 and charIndex != len(archetypeName) - 1:
-            sceneName = archetypeName[:charIndex]
-            sceneIndex = self._getSceneIndex(sceneName)
-
-            if sceneIndex != -1:
-                entityName = archetypeName[charIndex + 1 :]
-                entity = Entity(entityName, archetype, self.sceneList[sceneIndex])
+            scene = self._getScene(archetypeName[:charIndex])
+            if scene is not None:
+                entity = Entity(archetypeName[charIndex + 1 :], archetype)
                 self.entityList[entityType.value].append(entity)
 
                 if entityType == Archetype.MESH_FROM_PATH:
-                    # There is a bug with `log_file_from_path` and recordings.
-                    # That's why we call `rec.to_native()`.
-                    # 19/11/2024 - Issue : https://github.com/rerun-io/rerun/issues/8167
-                    rr.log_file_from_path(
-                        file_path=entity.archetype.path,
-                        recording=self.sceneList[sceneIndex].rec.to_native(),
-                    )
+                    rr.log_file_from_path(file_path=entity.archetype.path)
                 else:
                     rr.log(
-                        entityName,
+                        archetypeName[charIndex:],
                         entity.archetype,
-                        recording=self.sceneList[sceneIndex].rec,
+                        recording=scene.rec,
                     )
                 msg = (
                     f"_parseEntity() creates a {entityType.name} for '{archetypeName}', "
-                    f"and logs it directly to '{self.sceneList[sceneIndex].name}' scene."
+                    f"and logs it directly to '{scene.name}' scene."
                 )
                 logger.info(msg)
                 return
@@ -590,7 +620,7 @@ class Gui:
             isinstance(name, str) for name in [nodeName, groupName]
         ), "Parameters 'nodeName' and 'groupName' must be strings"
 
-        if self._getSceneIndex(groupName) == -1:
+        if self._getScene(groupName) is None:
             logger.error(f"addToGroup(): Scene '{groupName}' does not exists.")
             return False
         if not self._getEntity(nodeName):
