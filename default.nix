@@ -2,7 +2,7 @@
   lib,
   buildPythonPackage,
   setuptools,
-  rerun,
+  rerun-sdk,
 }:
 
 buildPythonPackage {
@@ -26,7 +26,7 @@ buildPythonPackage {
   ];
 
   dependencies = [
-    rerun
+    rerun-sdk
   ];
 
   pythonImportsCheck = [
