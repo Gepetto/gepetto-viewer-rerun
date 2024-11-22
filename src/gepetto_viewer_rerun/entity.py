@@ -14,7 +14,7 @@ class Entity:
 
     name: str
     archetype: rr.archetypes
-    scenes: List[Scene] = None
+    scenes: List[Scene] | None = None
 
     def __post_init__(self):
         if self.scenes is None:
