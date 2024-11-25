@@ -90,7 +90,9 @@ class Gui:
         return name
 
     def getNodeList(self):
-        entitiesName = [entity.name for entity_type in self.entityList for entity in entity_type]
+        entitiesName = [
+            entity.name for entity_type in self.entityList for entity in entity_type
+        ]
         return self.getWindowList() + self.getSceneList() + entitiesName
 
     def nodeExists(self, nodeName: str):
