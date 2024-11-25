@@ -579,12 +579,8 @@ class Gui:
     def _logArchetype(self, entityName: str, groupName: str):
         entity = self._getEntity(entityName)
         rec = self._getRecording(groupName)
-        sceneIndex = self._getSceneIndex(groupName)
 
         if isinstance(entity.archetype, MeshFromPath):
-            # There is a bug with `log_file_from_path` and recordings.
-            # That's why we call `rec.to_native()`.
-            # 19/11/2024 - Issue : https://github.com/rerun-io/rerun/issues/8167
             rr.log_file_from_path(
                 file_path=entity.archetype.path, recording=rec.to_native()
             )
@@ -604,7 +600,6 @@ class Gui:
             logger.info(f"Logging Points3D named '{entity.name}'.")
         else:
             return False
-        entity.addScene(self.sceneList[sceneIndex])
         rr.log(
             entity.name,
             entity.archetype,
