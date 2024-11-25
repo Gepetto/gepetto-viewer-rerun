@@ -104,13 +104,11 @@ class Gui:
         for scene in self.sceneList:
             if scene.name == sceneName:
                 return scene
-        return None
 
     def _getWindow(self, windowName: str):
         for window in self.windowList:
             if window.name == windowName:
                 return window
-        return None
 
     def addSceneToWindow(self, sceneName: str, wid: str):
         assert all(
@@ -217,7 +215,6 @@ class Gui:
             for entity in entity_list:
                 if entity.name == entityName:
                     return entity
-        return None
 
     def _isEntityInScene(self, entity: Entity, scene: Scene):
         if entity and entity.scenes:
