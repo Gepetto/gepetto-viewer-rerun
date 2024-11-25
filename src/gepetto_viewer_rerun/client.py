@@ -83,7 +83,7 @@ class Gui:
     def getWindowID(self, name: str):
         assert isinstance(name, str), "Parameter 'name' must be a string"
 
-        if name not in self.windowList:
+        if name not in self.getWindowList():
             logging.error(f"getWindowID(): Unknown windowName '{name}'.")
             return ""
         logger.info("getWindowID() only checks if window exists and return its name.")
