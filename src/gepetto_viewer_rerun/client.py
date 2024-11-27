@@ -74,7 +74,7 @@ class Gui:
         )
         logger.info(msg)
 
-    def _getSceneIndex(self, sceneName: str) -> int:
+    def _get_scene_index(self, sceneName: str) -> int:
         for index, scene in enumerate(self.sceneList):
             if scene.name == sceneName:
                 return index
@@ -85,7 +85,7 @@ class Gui:
             isinstance(name, str) for name in [sceneName, wid]
         ), "Parameters 'sceneName' and 'wid' must be strings"
 
-        index = self._getSceneIndex(sceneName)
+        index = self._get_scene_index(sceneName)
         if index == -1:
             logger.error(f"addSceneToWindow(): Unknown sceneName '{sceneName}'.")
             return False
@@ -97,7 +97,7 @@ class Gui:
         self.sceneList[index].setRec(rec)
         return True
 
-    def _parseEntity(
+    def _parse_entity(
         self, archetypeName: str, archetype: rr.archetypes, entityType: Archetype
     ):
         """
@@ -109,16 +109,16 @@ class Gui:
                 every '/' will interpreted as a tree
             - if there is no '/', archetype will require addToGroup() to be logged
         """
-        assert archetype is not None, "_parseEntity(): 'entity' must not be None"
+        assert archetype is not None, "_parse_entity(): 'entity' must not be None"
         assert isinstance(
             entityType, Archetype
-        ), "_parseEntity(): 'entityType' must be of type `enum Archetype`"
+        ), "_parse_entity(): 'entityType' must be of type `enum Archetype`"
 
         charIndex = archetypeName.find("/")
         # If entityName contains '/' then search for the scene in self.sceneList
         if charIndex != -1 and charIndex != len(archetypeName) - 1:
             sceneName = archetypeName[:charIndex]
-            sceneIndex = self._getSceneIndex(sceneName)
+            sceneIndex = self._get_scene_index(sceneName)
 
             if sceneIndex != -1:
                 entityName = archetypeName[charIndex + 1 :]
@@ -140,7 +140,7 @@ class Gui:
                         recording=self.sceneList[sceneIndex].rec,
                     )
                 msg = (
-                    f"_parseEntity() creates a {entityType.name} for '{archetypeName}', "
+                    f"_parse_entity() creates a {entityType.name} for '{archetypeName}', "
                     f"and logs it directly to '{self.sceneList[sceneIndex].name}' scene."
                 )
                 logger.info(msg)
@@ -149,19 +149,19 @@ class Gui:
         entity = Entity(archetypeName, archetype)
         self.entityList[entityType.value].append(entity)
         msg = (
-            f"_parseEntity() does not create a {entityType.name} for '{archetypeName}', "
+            f"_parse_entity() does not create a {entityType.name} for '{archetypeName}', "
             "it will be created when added to a group with addToGroup()."
         )
         logger.info(msg)
 
-    def _getEntity(self, entityName: str) -> Entity | None:
+    def _get_entity(self, entityName: str) -> Entity | None:
         for entity_list in self.entityList:
             for entity in entity_list:
                 if entity.name == entityName:
                     return entity
         return None
 
-    def _isEntityInScene(self, entity: Entity, scene: Scene) -> bool:
+    def _is_entity_in_scene(self, entity: Entity, scene: Scene) -> bool:
         if entity and entity.scenes:
             return scene in entity.scenes
         return False
@@ -174,7 +174,7 @@ class Gui:
             colors=[(125, 125, 125)],
             fill_mode="Solid",
         )
-        self._parseEntity(floorName, floor, Archetype.BOXES3D)
+        self._parse_entity(floorName, floor, Archetype.BOXES3D)
         return True
 
     def addBox(
@@ -199,7 +199,7 @@ class Gui:
             fill_mode="Solid",
             labels=[boxName],
         )
-        self._parseEntity(boxName, box, Archetype.BOXES3D)
+        self._parse_entity(boxName, box, Archetype.BOXES3D)
         return True
 
     def addArrow(
@@ -226,7 +226,7 @@ class Gui:
             colors=[RGBAcolor],
             labels=[name],
         )
-        self._parseEntity(name, arrow, Archetype.ARROWS3D)
+        self._parse_entity(name, arrow, Archetype.ARROWS3D)
         return True
 
     def resizeArrow(
@@ -259,14 +259,14 @@ class Gui:
         # If arrowName contains '/' then search for the scene
         if charIndex != -1 and charIndex != len(arrowName) - 1:
             sceneName = arrowName[:charIndex]
-            sceneIndex = self._getSceneIndex(sceneName)
+            sceneIndex = self._get_scene_index(sceneName)
             # Check if scene exists
             if sceneIndex != -1:
                 entityName = arrowName[charIndex + 1 :]
-                entity = self._getEntity(entityName)
+                entity = self._get_entity(entityName)
                 scene = self.sceneList[sceneIndex]
                 # if `entity` exists in `scene` then log it
-                if entity and self._isEntityInScene(entity, scene):
+                if entity and self._is_entity_in_scene(entity, scene):
                     newArrow = createArrow(
                         arrowName, radius, length, entity.archetype.colors.pa_array
                     )
@@ -287,7 +287,7 @@ class Gui:
                     logger.error(msg)
                     return False
 
-        entity = self._getEntity(arrowName)
+        entity = self._get_entity(arrowName)
         if not entity:
             logger.error(f"resizeArrow(): Arrow '{arrowName}' does not exists.")
             return False
@@ -330,7 +330,7 @@ class Gui:
             colors=[RGBAcolor],
             labels=[name],
         )
-        self._parseEntity(name, capsule, Archetype.CAPSULES3D)
+        self._parse_entity(name, capsule, Archetype.CAPSULES3D)
         return True
 
     def resizeCapsule(
@@ -359,14 +359,14 @@ class Gui:
         # If capsuleName contains '/' then search for the scene
         if charIndex != -1 and charIndex != len(capsuleName) - 1:
             sceneName = capsuleName[:charIndex]
-            sceneIndex = self._getSceneIndex(sceneName)
+            sceneIndex = self._get_scene_index(sceneName)
             # Check if scene exists
             if sceneIndex != -1:
                 entityName = capsuleName[charIndex + 1 :]
-                entity = self._getEntity(entityName)
+                entity = self._get_entity(entityName)
                 scene = self.sceneList[sceneIndex]
                 # if `entity` exists in `scene` then log it
-                if entity and self._isEntityInScene(entity, scene):
+                if entity and self._is_entity_in_scene(entity, scene):
                     newCapsule = createCapsule(
                         capsuleName, radius, length, entity.archetype.colors.pa_array
                     )
@@ -387,7 +387,7 @@ class Gui:
                     logger.error(msg)
                     return False
 
-        entity = self._getEntity(capsuleName)
+        entity = self._get_entity(capsuleName)
         if not entity:
             logger.error(
                 f"resizeCapsule(): Capsules3D '{capsuleName}' does not exists."
@@ -435,7 +435,7 @@ class Gui:
             colors=[RGBAcolor],
             labels=[lineName],
         )
-        self._parseEntity(lineName, line, Archetype.LINESTRIPS3D)
+        self._parse_entity(lineName, line, Archetype.LINESTRIPS3D)
         return True
 
     def addSquareFace(
@@ -463,7 +463,7 @@ class Gui:
             triangle_indices=[[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]],
             vertex_colors=[RGBAcolor],
         )
-        self._parseEntity(faceName, mesh, Archetype.MESH3D)
+        self._parse_entity(faceName, mesh, Archetype.MESH3D)
         return True
 
     def addTriangleFace(
@@ -493,7 +493,7 @@ class Gui:
             vertex_colors=[RGBAcolor],
         )
 
-        self._parseEntity(faceName, mesh, Archetype.MESH3D)
+        self._parse_entity(faceName, mesh, Archetype.MESH3D)
         return True
 
     def addSphere(
@@ -516,18 +516,18 @@ class Gui:
             colors=[RGBAcolor],
             labels=[sphereName],
         )
-        self._parseEntity(sphereName, sphere, Archetype.POINTS3D)
+        self._parse_entity(sphereName, sphere, Archetype.POINTS3D)
         return True
 
-    def _getRecording(self, recName: str) -> rr.RecordingStream | None:
+    def _get_recording(self, recName: str) -> rr.RecordingStream | None:
         return next(
             (scene.rec for scene in self.sceneList if scene.name == recName), None
         )
 
-    def _logArchetype(self, entityName: str, groupName: str) -> bool:
-        entity = self._getEntity(entityName)
-        rec = self._getRecording(groupName)
-        sceneIndex = self._getSceneIndex(groupName)
+    def _log_archetype(self, entityName: str, groupName: str) -> bool:
+        entity = self._get_entity(entityName)
+        rec = self._get_recording(groupName)
+        sceneIndex = self._get_scene_index(groupName)
 
         if isinstance(entity.archetype, MeshFromPath):
             # There is a bug with `log_file_from_path` and recordings.
@@ -568,10 +568,10 @@ class Gui:
             isinstance(name, str) for name in [nodeName, groupName]
         ), "Parameters 'nodeName' and 'groupName' must be strings"
 
-        if self._getSceneIndex(groupName) == -1:
+        if self._get_scene_index(groupName) == -1:
             logger.error(f"addToGroup(): Scene '{groupName}' does not exists.")
             return False
-        if not self._getEntity(nodeName):
+        if not self._get_entity(nodeName):
             logger.error(f"addToGroup(): Entity '{nodeName}' does not exists.")
             return False
-        return self._logArchetype(nodeName, groupName)
+        return self._log_archetype(nodeName, groupName)
