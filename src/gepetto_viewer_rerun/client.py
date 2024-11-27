@@ -1,25 +1,15 @@
 import logging
-from enum import Enum
 from math import tau
 from typing import List, Union
 
 import numpy as np
 import rerun as rr
 
-from .entity import Entity, MeshFromPath
+from .entity import Entity, Group
 from .scene import Scene
+from .archetype import Archetype
 
 logger = logging.getLogger(__name__)
-
-
-class Archetype(Enum):
-    ARROWS3D = 0
-    BOXES3D = 1
-    CAPSULES3D = 2
-    LINESTRIPS3D = 3
-    MESH3D = 4
-    MESH_FROM_PATH = 5
-    POINTS3D = 6
 
 
 class Client:
@@ -43,12 +33,16 @@ class Gui:
         self.sceneList = []
         self.windowList = []
         self.entityList = [[] for _ in range(len(Archetype))]
+        self.groupList = []
+        self.groupTree = None
 
     def __repr__(self):
         return (
-            f"Gui(windowList={self.windowList}, "
-            f"sceneList (size: {len(self.sceneList)}) = {self.sceneList}, "
-            f"entityList (size: {len(self.entityList)}) = {self.entityList})"
+            f"Gui(windowList={self.windowList}\n"
+            f"sceneList (size: {len(self.sceneList)}) = {self.sceneList}\n"
+            f"entityList (size: {len(self.entityList)}) = {self.entityList}\n"
+            f"groupTree = {self.groupTree})\n"
+            f"groupList (size: {len(self.groupList)}) : {self.groupList}\n"
         )
 
     def createWindow(self, name: str):
@@ -95,64 +89,47 @@ class Gui:
 
         rec = rr.new_recording(application_id=wid, recording_id=sceneName, spawn=True)
         self.sceneList[index].setRec(rec)
+        self.groupTree = Group(sceneName, value=self.sceneList[index])
         return True
 
     def _parseEntity(
-        self, archetypeName: str, archetype: rr.archetypes, entityType: Archetype
+        self, archetypeName: str, archetype: rr.archetypes, archetypeType: Archetype
     ):
         """
         Parse archetype name and log (or not) archetype :
-            - if there is a scene specified in archetypeName :  <scene>/name
-                it will log directly the archetype into the scene
-            - if there is a '/' : <not a scene>/name
-                it will need addToGroup() to be log in a scene
-                every '/' will interpreted as a tree
-            - if there is no '/', archetype will require addToGroup() to be logged
+            - if there is a group specified in archetypeName :  <group>/name
+                it will add the archetype to group, if the group does not exits,
+                it will create it in self.groupTree.
+            - if there is no '/', archetype will require addToGroup() to be added to
+                self.groupTree
         """
         assert archetype is not None, "_parseEntity(): 'entity' must not be None"
         assert isinstance(
-            entityType, Archetype
-        ), "_parseEntity(): 'entityType' must be of type `enum Archetype`"
+            archetypeType, Archetype
+        ), "_parseEntity(): 'archetypeType' must be of type `enum Archetype`"
 
         charIndex = archetypeName.find("/")
-        # If entityName contains '/' then search for the scene in self.sceneList
+        # If entityName contains '/' then create Entity and search for the group
         if charIndex != -1 and charIndex != len(archetypeName) - 1:
-            sceneName = archetypeName[:charIndex]
-            sceneIndex = self._getSceneIndex(sceneName)
+            groupName = archetypeName[:charIndex]
+            group = self._getNodeInTree(self.groupTree, groupName)
+            entityName = archetypeName[charIndex + 1 :]
+            entity = Entity(entityName, archetype)
+            self.entityList[archetypeType.value].append(entity)
 
-            if sceneIndex != -1:
-                entityName = archetypeName[charIndex + 1 :]
-                entity = Entity(entityName, archetype, self.sceneList[sceneIndex])
-                self.entityList[entityType.value].append(entity)
-
-                if entityType == Archetype.MESH_FROM_PATH:
-                    # There is a bug with `log_file_from_path` and recordings.
-                    # That's why we call `rec.to_native()`.
-                    # 19/11/2024 - Issue : https://github.com/rerun-io/rerun/issues/8167
-                    rr.log_file_from_path(
-                        file_path=entity.archetype.path,
-                        recording=self.sceneList[sceneIndex].rec.to_native(),
-                    )
-                else:
-                    rr.log(
-                        entityName,
-                        entity.archetype,
-                        recording=self.sceneList[sceneIndex].rec,
-                    )
-                msg = (
-                    f"_parseEntity() creates a {entityType.name} for '{archetypeName}', "
-                    f"and logs it directly to '{self.sceneList[sceneIndex].name}' scene."
-                )
-                logger.info(msg)
-                return
-        # Put entity to entityList, wait for addToGroup() to be logged
+            if group is None:
+                logger.info("_parseEntity(): call to createGroup()")
+                self.createGroup(groupName)
+            logger.info(
+                f"_parseEntity(): create entity '{entityName}' of type {archetypeType.name}."
+                f"_parseEntity(): call to addToGroup()."
+            )
+            self.addToGroup(entityName, groupName)
+            return
+        # Create entity and store it to self.entityList
         entity = Entity(archetypeName, archetype)
-        self.entityList[entityType.value].append(entity)
-        msg = (
-            f"_parseEntity() does not create a {entityType.name} for '{archetypeName}', "
-            "it will be created when added to a group with addToGroup()."
-        )
-        logger.info(msg)
+        self.entityList[archetypeType.value].append(entity)
+        logger.info(f"_parseEntity(): Creating entity '{archetypeName}'.")
 
     def _getEntity(self, entityName: str):
         for entity_list in self.entityList:
@@ -524,43 +501,85 @@ class Gui:
             (scene.rec for scene in self.sceneList if scene.name == recName), None
         )
 
-    def _logArchetype(self, entityName: str, groupName: str):
-        entity = self._getEntity(entityName)
-        rec = self._getRecording(groupName)
-        sceneIndex = self._getSceneIndex(groupName)
+    def _logEntity(self, group: Group):
+        """Draw a group entity in the Viewer"""
+        entity = group.value
 
-        if isinstance(entity.archetype, MeshFromPath):
-            # There is a bug with `log_file_from_path` and recordings.
-            # That's why we call `rec.to_native()`.
-            # 19/11/2024 - Issue : https://github.com/rerun-io/rerun/issues/8167
-            rr.log_file_from_path(
-                file_path=entity.archetype.path, recording=rec.to_native()
-            )
-            logger.info(f"Logging Mesh from file named '{entity.name}'.")
+        if entity.scenes is not None:
+            for scene in entity.scenes:
+                rr.log(
+                    group.name,
+                    entity.archetype,
+                    recording=scene.rec,
+                )
+                logger.info(
+                    f"_logEntity(): Logging entity '{entity.name}' in '{scene.name}' scene."
+                )
             return True
-        elif isinstance(entity.archetype, rr.archetypes.arrows3d.Arrows3D):
-            logger.info(f"Logging Arrows3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.boxes3d.Boxes3D):
-            logger.info(f"Logging Boxes3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.capsules3d.Capsules3D):
-            logger.info(f"Logging Capsules3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.line_strips3d.LineStrips3D):
-            logger.info(f"Logging LineStrip3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.mesh3d.Mesh3D):
-            logger.info(f"Logging Mesh3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.points3d.Points3D):
-            logger.info(f"Logging Points3D named '{entity.name}'.")
         else:
+            logger.info(
+                f"_logEntity(): Logging entity '{entity.name}' don't have any scenes to be displayed in."
+            )
             return False
-        entity.addScene(self.sceneList[sceneIndex])
-        rr.log(
-            entity.name,
-            entity.archetype,
-            recording=rec,
-        )
-        return True
 
-    def addToGroup(self, nodeName: str, groupName: str):
+    def _getNodeInTree(self, root: Group, groupName: str) -> Group | None:
+        """Get a node in self.groupTree, regardless of its type"""
+        if root is None:
+            return None
+        if root.name == groupName:
+            return root
+        for child in root.children:
+            foundNode = self._getNodeInTree(child, groupName)
+            if foundNode:
+                return foundNode
+
+    def _getNotAddedGroup(self, groupName: str) -> int:
+        """Return the index of the groupName in self.groupList"""
+        for i in range(len(self.groupList)):
+            if self.groupList[i] == groupName:
+                return i
+        return -1
+
+    def _getSceneInTree(self, root: Group, sceneName: str) -> Scene | None:
+        """Get a scene in self.groupTree"""
+        if root is None:
+            return None
+        if root.name == sceneName and isinstance(root.value, Scene):
+            return root
+        for child in root.children:
+            foundNode = self._getSceneInTree(child, sceneName)
+            if foundNode:
+                return foundNode
+
+    def _getGroupInTree(self, root: Group, groupName: str) -> Group | None:
+        """Get a group in self.groupTree"""
+        if root is None:
+            return None
+        if root.name == groupName and root.value is None:
+            return root
+        for child in root.children:
+            foundNode = self._getGroupInTree(child, groupName)
+            if foundNode:
+                return foundNode
+
+    def _getSceneParent(self, target: Group) -> Group | None:
+        """
+        Browse tree to find the last Scene parent of the given node
+        """
+
+        def dfs(current: Group, targetNode: Group, lastScene: Group = None):
+            if current == targetNode:
+                return lastScene.value
+            if isinstance(current.value, Scene):
+                lastScene = current
+            for child in current.children:
+                result = dfs(child, targetNode, lastScene)
+                if result:
+                    return result
+
+        return dfs(self.groupTree, target)
+
+    def addToGroup(self, nodeName: str, groupName: str) -> bool:
         """
         Actual log of an entity
         """
@@ -568,10 +587,53 @@ class Gui:
             isinstance(name, str) for name in [nodeName, groupName]
         ), "Parameters 'nodeName' and 'groupName' must be strings"
 
-        if self._getSceneIndex(groupName) == -1:
-            logger.error(f"addToGroup(): Scene '{groupName}' does not exists.")
+        entity = self._getEntity(nodeName)
+        groupIndex = self._getNotAddedGroup(nodeName)
+        if entity is None and groupIndex == -1:
+            logger.error(f"addToGroup(): node '{nodeName}' does not exists.")
             return False
-        if not self._getEntity(nodeName):
-            logger.error(f"addToGroup(): Entity '{nodeName}' does not exists.")
+
+        group = self._getNodeInTree(self.groupTree, groupName)
+        if group is None:
+            logger.error(f"addToGroup(): group '{groupName}' does not exists.")
             return False
-        return self._logArchetype(nodeName, groupName)
+
+        if entity:
+            if groupName[-1] != "/" and nodeName[0] != "/":
+                groupName = groupName + "/" + nodeName
+            else:
+                groupName = groupName + nodeName
+            newGroup = Group(groupName, entity)
+            group.children.append(newGroup)
+            sceneAncestor = self._getSceneParent(newGroup)
+            if sceneAncestor is not None:
+                entity.scenes.append(sceneAncestor)
+            logger.info(f"addToGroup(): Creating '{newGroup.name}' entity group.")
+            self._logEntity(newGroup)
+        elif groupIndex != -1:
+            newGroup = self._makeGroup(self.groupList[groupIndex])
+            group.children.append(newGroup)
+            logger.info(f"addToGroup(): Creating '{newGroup.name}' group.")
+        return True
+
+    def _makeGroup(self, groupName: str) -> Group:
+        split = groupName.split("/")
+        root = Group(split[0])
+        current = root
+        current_path = split[0]
+
+        for string in split[1:]:
+            current_path += "/" + string
+            child = Group(current_path)
+            current.children.append(child)
+            current = child
+        return root
+
+    def createGroup(self, groupName: str) -> bool:
+        assert isinstance(groupName, str), "Paramter 'groupName' must be a string"
+
+        self.groupList.append(groupName)
+        logger.info(
+            "createGroup(): does not create the group, group is create when calling addToGroup()."
+        )
+        return True
