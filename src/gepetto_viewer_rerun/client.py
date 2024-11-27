@@ -33,28 +33,28 @@ class Client:
 class Gui:
     def __init__(self):
         """
-        sceneList : List of `Scene` class (name and associated recording)
-        windowList : List of all window names
-        entityList : List containing every Rerun archetypes,
+        scene_list : List of `Scene` class (name and associated recording)
+        window_list : List of all window names
+        entity_list : List containing every Rerun archetypes,
                     each archetypes contain a list of `Entity` class.
                     Use `Enum Archetype` to get indices.
         """
 
-        self.sceneList = []
-        self.windowList = []
-        self.entityList = [[] for _ in range(len(Archetype))]
+        self.scene_list = []
+        self.window_list = []
+        self.entity_list = [[] for _ in range(len(Archetype))]
 
     def __repr__(self):
         return (
-            f"Gui(windowList={self.windowList}, "
-            f"sceneList (size: {len(self.sceneList)}) = {self.sceneList}, "
-            f"entityList (size: {len(self.entityList)}) = {self.entityList})"
+            f"Gui(window_list={self.window_list}, "
+            f"scene_list (size: {len(self.scene_list)}) = {self.scene_list}, "
+            f"entity_list (size: {len(self.entity_list)}) = {self.entity_list})"
         )
 
     def createWindow(self, name: str) -> str:
         assert isinstance(name, str), "Parameter 'name' must be a string"
 
-        self.windowList.append(name)
+        self.window_list.append(name)
         msg = (
             "createWindow() does not create any window, "
             "Rerun create both window and scene at the same time. "
@@ -66,7 +66,7 @@ class Gui:
     def createScene(self, sceneName: str):
         assert isinstance(sceneName, str), "Parameter 'sceneName' must be a string"
 
-        self.sceneList.append(Scene(sceneName))
+        self.scene_list.append(Scene(sceneName))
         msg = (
             "createScene() does not create any scene yet, "
             "Rerun create both window and scene at the same time. "
@@ -75,7 +75,7 @@ class Gui:
         logger.info(msg)
 
     def _get_scene_index(self, sceneName: str) -> int:
-        for index, scene in enumerate(self.sceneList):
+        for index, scene in enumerate(self.scene_list):
             if scene.name == sceneName:
                 return index
         return -1
@@ -89,12 +89,12 @@ class Gui:
         if index == -1:
             logger.error(f"addSceneToWindow(): Unknown sceneName '{sceneName}'.")
             return False
-        elif wid not in self.windowList:
+        elif wid not in self.window_list:
             logger.error(f"addSceneToWindow(): Unknown windowName '{wid}'.")
             return False
 
         rec = rr.new_recording(application_id=wid, recording_id=sceneName, spawn=True)
-        self.sceneList[index].setRec(rec)
+        self.scene_list[index].set_rec(rec)
         return True
 
     def _parse_entity(
@@ -114,16 +114,16 @@ class Gui:
             entityType, Archetype
         ), "_parse_entity(): 'entityType' must be of type `enum Archetype`"
 
-        charIndex = archetypeName.find("/")
-        # If entityName contains '/' then search for the scene in self.sceneList
-        if charIndex != -1 and charIndex != len(archetypeName) - 1:
-            sceneName = archetypeName[:charIndex]
-            sceneIndex = self._get_scene_index(sceneName)
+        char_index = archetypeName.find("/")
+        # If archetypeName contains '/' then search for the scene in self.scene_list
+        if char_index != -1 and char_index != len(archetypeName) - 1:
+            scene_name = archetypeName[:char_index]
+            scene_index = self._get_scene_index(scene_name)
 
-            if sceneIndex != -1:
-                entityName = archetypeName[charIndex + 1 :]
-                entity = Entity(entityName, archetype, self.sceneList[sceneIndex])
-                self.entityList[entityType.value].append(entity)
+            if scene_index != -1:
+                entity_name = archetypeName[char_index + 1 :]
+                entity = Entity(entity_name, archetype, self.scene_list[scene_index])
+                self.entity_list[entityType.value].append(entity)
 
                 if entityType == Archetype.MESH_FROM_PATH:
                     # There is a bug with `log_file_from_path` and recordings.
@@ -131,23 +131,23 @@ class Gui:
                     # 19/11/2024 - Issue : https://github.com/rerun-io/rerun/issues/8167
                     rr.log_file_from_path(
                         file_path=entity.archetype.path,
-                        recording=self.sceneList[sceneIndex].rec.to_native(),
+                        recording=self.scene_list[scene_index].rec.to_native(),
                     )
                 else:
                     rr.log(
-                        entityName,
+                        entity_name,
                         entity.archetype,
-                        recording=self.sceneList[sceneIndex].rec,
+                        recording=self.scene_list[scene_index].rec,
                     )
                 msg = (
                     f"_parse_entity() creates a {entityType.name} for '{archetypeName}', "
-                    f"and logs it directly to '{self.sceneList[sceneIndex].name}' scene."
+                    f"and logs it directly to '{self.scene_list[scene_index].name}' scene."
                 )
                 logger.info(msg)
                 return
-        # Put entity to entityList, wait for addToGroup() to be logged
+        # Put entity to entity_list, wait for addToGroup() to be logged
         entity = Entity(archetypeName, archetype)
-        self.entityList[entityType.value].append(entity)
+        self.entity_list[entityType.value].append(entity)
         msg = (
             f"_parse_entity() does not create a {entityType.name} for '{archetypeName}', "
             "it will be created when added to a group with addToGroup()."
@@ -155,7 +155,7 @@ class Gui:
         logger.info(msg)
 
     def _get_entity(self, entityName: str) -> Entity | None:
-        for entity_list in self.entityList:
+        for entity_list in self.entity_list:
             for entity in entity_list:
                 if entity.name == entityName:
                     return entity
@@ -255,34 +255,34 @@ class Gui:
             )
             return arrow
 
-        charIndex = arrowName.find("/")
+        char_index = arrowName.find("/")
         # If arrowName contains '/' then search for the scene
-        if charIndex != -1 and charIndex != len(arrowName) - 1:
-            sceneName = arrowName[:charIndex]
-            sceneIndex = self._get_scene_index(sceneName)
+        if char_index != -1 and char_index != len(arrowName) - 1:
+            scene_name = arrowName[:char_index]
+            scene_index = self._get_scene_index(scene_name)
             # Check if scene exists
-            if sceneIndex != -1:
-                entityName = arrowName[charIndex + 1 :]
-                entity = self._get_entity(entityName)
-                scene = self.sceneList[sceneIndex]
+            if scene_index != -1:
+                entity_name = arrowName[char_index + 1 :]
+                entity = self._get_entity(entity_name)
+                scene = self.scene_list[scene_index]
                 # if `entity` exists in `scene` then log it
                 if entity and self._is_entity_in_scene(entity, scene):
-                    newArrow = createArrow(
+                    new_arrow = createArrow(
                         arrowName, radius, length, entity.archetype.colors.pa_array
                     )
-                    entity.archetype = newArrow
+                    entity.archetype = new_arrow
                     rr.log(entity.name, entity.archetype, recording=scene.rec)
 
                     msg = (
                         f"resizeArrow('{arrowName}'): Logging new arrow "
-                        f"'{entityName}' in '{sceneName}' scene."
+                        f"'{entity_name}' in '{scene_name}' scene."
                     )
                     logger.info(msg)
                     return True
                 else:
                     msg = (
-                        f"resizeArrow({arrowName}): Arrow '{entityName}' "
-                        f"does not exists in '{sceneName}' scene."
+                        f"resizeArrow({arrowName}): Arrow '{entity_name}' "
+                        f"does not exists in '{scene_name}' scene."
                     )
                     logger.error(msg)
                     return False
@@ -292,10 +292,10 @@ class Gui:
             logger.error(f"resizeArrow(): Arrow '{arrowName}' does not exists.")
             return False
 
-        newArrow = createArrow(
+        new_arrow = createArrow(
             arrowName, radius, length, entity.archetype.colors.pa_array
         )
-        entity.archetype = newArrow
+        entity.archetype = new_arrow
         if entity.scenes:
             for scene in entity.scenes:
                 rr.log(entity.name, entity.archetype, recording=scene.rec)
@@ -355,34 +355,34 @@ class Gui:
             )
             return capsule
 
-        charIndex = capsuleName.find("/")
+        char_index = capsuleName.find("/")
         # If capsuleName contains '/' then search for the scene
-        if charIndex != -1 and charIndex != len(capsuleName) - 1:
-            sceneName = capsuleName[:charIndex]
-            sceneIndex = self._get_scene_index(sceneName)
+        if char_index != -1 and char_index != len(capsuleName) - 1:
+            scene_name = capsuleName[:char_index]
+            scene_index = self._get_scene_index(scene_name)
             # Check if scene exists
-            if sceneIndex != -1:
-                entityName = capsuleName[charIndex + 1 :]
-                entity = self._get_entity(entityName)
-                scene = self.sceneList[sceneIndex]
+            if scene_index != -1:
+                entity_name = capsuleName[char_index + 1 :]
+                entity = self._get_entity(entity_name)
+                scene = self.scene_list[scene_index]
                 # if `entity` exists in `scene` then log it
                 if entity and self._is_entity_in_scene(entity, scene):
-                    newCapsule = createCapsule(
+                    new_capsule = createCapsule(
                         capsuleName, radius, length, entity.archetype.colors.pa_array
                     )
-                    entity.archetype = newCapsule
+                    entity.archetype = new_capsule
                     rr.log(entity.name, entity.archetype, recording=scene.rec)
 
                     msg = (
                         f"resizeCapsule('{capsuleName}'): Logging new Capsules3D "
-                        f"'{entityName}' in '{sceneName}' scene."
+                        f"'{entity_name}' in '{scene_name}' scene."
                     )
                     logger.info(msg)
                     return True
                 else:
                     msg = (
-                        f"resizeCapsule({capsuleName}): Capsules3D '{entityName}' "
-                        f"does not exists in '{sceneName}' scene."
+                        f"resizeCapsule({capsuleName}): Capsules3D '{entity_name}' "
+                        f"does not exists in '{scene_name}' scene."
                     )
                     logger.error(msg)
                     return False
@@ -394,10 +394,10 @@ class Gui:
             )
             return False
 
-        newCapsule = createCapsule(
+        new_capsule = createCapsule(
             capsuleName, radius, length, entity.archetype.colors.pa_array
         )
-        entity.archetype = newCapsule
+        entity.archetype = new_capsule
         if entity.scenes:
             for scene in entity.scenes:
                 rr.log(entity.name, entity.archetype, recording=scene.rec)
@@ -521,13 +521,13 @@ class Gui:
 
     def _get_recording(self, recName: str) -> rr.RecordingStream | None:
         return next(
-            (scene.rec for scene in self.sceneList if scene.name == recName), None
+            (scene.rec for scene in self.scene_list if scene.name == recName), None
         )
 
     def _log_archetype(self, entityName: str, groupName: str) -> bool:
         entity = self._get_entity(entityName)
         rec = self._get_recording(groupName)
-        sceneIndex = self._get_scene_index(groupName)
+        scene_index = self._get_scene_index(groupName)
 
         if isinstance(entity.archetype, MeshFromPath):
             # There is a bug with `log_file_from_path` and recordings.
@@ -552,7 +552,7 @@ class Gui:
             logger.info(f"Logging Points3D named '{entity.name}'.")
         else:
             return False
-        entity.addScene(self.sceneList[sceneIndex])
+        entity.addScene(self.scene_list[scene_index])
         rr.log(
             entity.name,
             entity.archetype,
