@@ -51,7 +51,7 @@ class Gui:
             f"entityList (size: {len(self.entityList)}) = {self.entityList})"
         )
 
-    def createWindow(self, name: str):
+    def createWindow(self, name: str) -> str:
         assert isinstance(name, str), "Parameter 'name' must be a string"
 
         self.windowList.append(name)
@@ -74,13 +74,13 @@ class Gui:
         )
         logger.info(msg)
 
-    def _getSceneIndex(self, sceneName: str):
+    def _getSceneIndex(self, sceneName: str) -> int:
         for index, scene in enumerate(self.sceneList):
             if scene.name == sceneName:
                 return index
         return -1
 
-    def addSceneToWindow(self, sceneName: str, wid: str):
+    def addSceneToWindow(self, sceneName: str, wid: str) -> bool:
         assert all(
             isinstance(name, str) for name in [sceneName, wid]
         ), "Parameters 'sceneName' and 'wid' must be strings"
@@ -154,19 +154,19 @@ class Gui:
         )
         logger.info(msg)
 
-    def _getEntity(self, entityName: str):
+    def _getEntity(self, entityName: str) -> Entity | None:
         for entity_list in self.entityList:
             for entity in entity_list:
                 if entity.name == entityName:
                     return entity
         return None
 
-    def _isEntityInScene(self, entity: Entity, scene: Scene):
+    def _isEntityInScene(self, entity: Entity, scene: Scene) -> bool:
         if entity and entity.scenes:
             return scene in entity.scenes
         return False
 
-    def addFloor(self, floorName: str):
+    def addFloor(self, floorName: str) -> bool:
         assert isinstance(floorName, str), "Parameter 'floorName' must be a string"
 
         floor = rr.Boxes3D(
@@ -184,7 +184,7 @@ class Gui:
         boxSize2: List[Union[int, float]],
         boxSize3: List[Union[int, float]],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(boxName, str), "Parameter 'boxName' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [boxSize1, boxSize2, boxSize3]
@@ -208,7 +208,7 @@ class Gui:
         radius: Union[int, float],
         length: Union[int, float],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, length]
@@ -231,7 +231,7 @@ class Gui:
 
     def resizeArrow(
         self, arrowName: str, radius: Union[int, float], length: Union[int, float]
-    ):
+    ) -> bool:
         assert isinstance(arrowName, str), "Parameter 'arrowName' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, length]
@@ -242,7 +242,7 @@ class Gui:
             radius: Union[int, float],
             length: Union[int, float],
             colors: List[Union[int, float]],
-        ):
+        ) -> rr.archetypes.arrows3d.Arrows3D:
             angle = np.arange(start=0, stop=tau, step=tau)
             vectors = np.column_stack(
                 [np.sin(angle) * length, np.zeros(1), np.cos(angle) * length]
@@ -315,7 +315,7 @@ class Gui:
         radius: Union[int, float],
         height: Union[int, float],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, height]
@@ -335,7 +335,7 @@ class Gui:
 
     def resizeCapsule(
         self, capsuleName: str, radius: Union[int, float], length: Union[int, float]
-    ):
+    ) -> bool:
         assert isinstance(capsuleName, str), "Parameter 'capsuleName' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, length]
@@ -346,7 +346,7 @@ class Gui:
             radius: Union[int, float],
             length: Union[int, float],
             colors: List[Union[int, float]],
-        ):
+        ) -> rr.archetypes.capsules3d.Capsules3D:
             capsule = rr.Capsules3D(
                 radii=[radius],
                 lengths=length,
@@ -417,7 +417,7 @@ class Gui:
         pos1: List[Union[int, float]],
         pos2: List[Union[int, float]],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(lineName, str), "Parameter 'lineName' must be a string"
         assert all(
             isinstance(x, (list, tuple)) for x in [pos1, pos2]
@@ -446,7 +446,7 @@ class Gui:
         pos3: List[Union[int, float]],
         pos4: List[Union[int, float]],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(faceName, str), "Parameter 'faceName' must be a string"
         assert all(
             isinstance(x, (list, tuple)) for x in [pos1, pos2, pos3, pos4]
@@ -473,7 +473,7 @@ class Gui:
         pos2: List[Union[int, float]],
         pos3: List[Union[int, float]],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(faceName, str), "Parameter 'faceName' must be a string"
         assert all(
             isinstance(x, (list, tuple)) for x in [pos1, pos2, pos3]
@@ -501,7 +501,7 @@ class Gui:
         sphereName: str,
         radius: Union[int, float],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(sphereName, str), "Parameter 'sphereName' must be a string"
         assert isinstance(
             radius, (int, float)
@@ -519,12 +519,12 @@ class Gui:
         self._parseEntity(sphereName, sphere, Archetype.POINTS3D)
         return True
 
-    def _getRecording(self, recName: str):
+    def _getRecording(self, recName: str) -> rr.RecordingStream | None:
         return next(
             (scene.rec for scene in self.sceneList if scene.name == recName), None
         )
 
-    def _logArchetype(self, entityName: str, groupName: str):
+    def _logArchetype(self, entityName: str, groupName: str) -> bool:
         entity = self._getEntity(entityName)
         rec = self._getRecording(groupName)
         sceneIndex = self._getSceneIndex(groupName)
@@ -560,7 +560,7 @@ class Gui:
         )
         return True
 
-    def addToGroup(self, nodeName: str, groupName: str):
+    def addToGroup(self, nodeName: str, groupName: str) -> bool:
         """
         Actual log of an entity
         """
