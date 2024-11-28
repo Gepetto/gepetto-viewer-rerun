@@ -34,7 +34,7 @@ class Gui:
         self.windowList = []
         self.entityList = [[] for _ in range(len(Archetype))]
         self.groupList = []
-        self.groupTree = None
+        self.groupTree = Group("/", None, [])
 
     def __repr__(self):
         return (
@@ -89,7 +89,9 @@ class Gui:
 
         rec = rr.new_recording(application_id=wid, recording_id=sceneName, spawn=True)
         self.sceneList[index].setRec(rec)
-        self.groupTree = Group(sceneName, value=self.sceneList[index])
+        scene = Group(sceneName, self.sceneList[index], [])
+        window = Group(wid, None, [scene])
+        self.groupTree.add_child(window)
         return True
 
     def _parseEntity(
@@ -507,14 +509,17 @@ class Gui:
 
         if entity.scenes is not None:
             for scene in entity.scenes:
-                rr.log(
-                    group.name,
-                    entity.archetype,
-                    recording=scene.rec,
-                )
-                logger.info(
-                    f"_logEntity(): Logging entity '{entity.name}' in '{scene.name}' scene."
-                )
+                split = group.name.split("/")
+                # Ensure that we log the group to the right scene.
+                if split[0] in scene.name:
+                    rr.log(
+                        group.name,
+                        entity.archetype,
+                        recording=scene.rec,
+                    )
+                    logger.info(
+                        f"_logEntity(): Logging entity '{entity.name}' in '{scene.name}' scene."
+                    )
             return True
         else:
             logger.info(
@@ -526,7 +531,7 @@ class Gui:
         """Get a node in self.groupTree, regardless of its type"""
         if root is None:
             return None
-        if root.name == groupName:
+        if groupName in root.name:
             return root
         for child in root.children:
             foundNode = self._getNodeInTree(child, groupName)
@@ -598,21 +603,22 @@ class Gui:
             logger.error(f"addToGroup(): group '{groupName}' does not exists.")
             return False
 
+        if group.name[-1] != "/" and nodeName[0] != "/":
+            nodeName = group.name + "/" + nodeName
+        else:
+            nodeName = group.name + nodeName
         if entity:
-            if groupName[-1] != "/" and nodeName[0] != "/":
-                groupName = groupName + "/" + nodeName
-            else:
-                groupName = groupName + nodeName
-            newGroup = Group(groupName, entity)
-            group.children.append(newGroup)
+            newGroup = Group(nodeName, entity)
+            group.add_child(newGroup)
             sceneAncestor = self._getSceneParent(newGroup)
             if sceneAncestor is not None:
-                entity.scenes.append(sceneAncestor)
+                entity.addScene(sceneAncestor)
             logger.info(f"addToGroup(): Creating '{newGroup.name}' entity group.")
             self._logEntity(newGroup)
         elif groupIndex != -1:
-            newGroup = self._makeGroup(self.groupList[groupIndex])
-            group.children.append(newGroup)
+            newGroup = self._makeGroup(nodeName)
+            newGroup.name = groupName + newGroup.name
+            group.add_child(newGroup)
             logger.info(f"addToGroup(): Creating '{newGroup.name}' group.")
         return True
 
@@ -625,7 +631,7 @@ class Gui:
         for string in split[1:]:
             current_path += "/" + string
             child = Group(current_path)
-            current.children.append(child)
+            current.add_child(child)
             current = child
         return root
 
