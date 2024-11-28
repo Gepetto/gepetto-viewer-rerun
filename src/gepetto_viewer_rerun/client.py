@@ -234,58 +234,36 @@ class Gui:
             )
             return arrow
 
-        charIndex = arrowName.find("/")
-        # If arrowName contains '/' then search for the scene
-        if charIndex != -1 and charIndex != len(arrowName) - 1:
-            sceneName = arrowName[:charIndex]
-            sceneIndex = self._getSceneIndex(sceneName)
-            # Check if scene exists
-            if sceneIndex != -1:
-                entityName = arrowName[charIndex + 1 :]
-                entity = self._getEntity(entityName)
-                scene = self.sceneList[sceneIndex]
-                # if `entity` exists in `scene` then log it
-                if entity and self._isEntityInScene(entity, scene):
-                    newArrow = createArrow(
-                        arrowName, radius, length, entity.archetype.colors.pa_array
-                    )
-                    entity.archetype = newArrow
-                    rr.log(entity.name, entity.archetype, recording=scene.rec)
-
-                    msg = (
-                        f"resizeArrow('{arrowName}'): Logging new arrow "
-                        f"'{entityName}' in '{sceneName}' scene."
-                    )
-                    logger.info(msg)
-                    return True
-                else:
-                    msg = (
-                        f"resizeArrow({arrowName}): Arrow '{entityName}' "
-                        f"does not exists in '{sceneName}' scene."
-                    )
-                    logger.error(msg)
-                    return False
-
-        entity = self._getEntity(arrowName)
-        if not entity:
-            logger.error(f"resizeArrow(): Arrow '{arrowName}' does not exists.")
-            return False
-
-        newArrow = createArrow(
-            arrowName, radius, length, entity.archetype.colors.pa_array
-        )
-        entity.archetype = newArrow
-        if entity.scenes:
-            for scene in entity.scenes:
-                rr.log(entity.name, entity.archetype, recording=scene.rec)
-                msg = (
-                    f"resizeArrow(): Logging a new Arrow3D named '{entity.name}' "
-                    f"in '{scene.name}' scene."
-                )
-                logger.info(msg)
+        group = self._getNodeInTree(self.groupTree, arrowName)
+        if group is None:
+            entity = self._getEntity(arrowName)
+            if entity is None:
+                logger.error(f"resizeArrow(): Arrow '{arrowName}' does not exists.")
+                return False
+            newArrow = createArrow(
+                arrowName, radius, length, entity.archetype.colors.pa_array
+            )
+            entity.archetype = newArrow
+            logger.info(
+                f"resizeArrow(): Creating a new arrow called '{arrowName}'."
+                "resizeArrow() does not log it."
+            )
+            return True
         else:
-            msg = f"resizeArrow(): Resizing an Arrow3D named '{entity.name}'."
-            logger.info(msg)
+            if not isinstance(group.value, Entity):
+                logger.error(
+                    f"resizeArrow(): group '{group.name}' is not of type Entity"
+                )
+                return False
+            entity = group.value
+            newArrow = createArrow(
+                arrowName, radius, length, entity.archetype.colors.pa_array
+            )
+            entity.archetype = newArrow
+            logger.info(
+                f"resizeArrow(): Creating a new arrow called '{arrowName}' and log it."
+            )
+            self._logEntity(group)
         return True
 
     def addCapsule(
@@ -334,60 +312,38 @@ class Gui:
             )
             return capsule
 
-        charIndex = capsuleName.find("/")
-        # If capsuleName contains '/' then search for the scene
-        if charIndex != -1 and charIndex != len(capsuleName) - 1:
-            sceneName = capsuleName[:charIndex]
-            sceneIndex = self._getSceneIndex(sceneName)
-            # Check if scene exists
-            if sceneIndex != -1:
-                entityName = capsuleName[charIndex + 1 :]
-                entity = self._getEntity(entityName)
-                scene = self.sceneList[sceneIndex]
-                # if `entity` exists in `scene` then log it
-                if entity and self._isEntityInScene(entity, scene):
-                    newCapsule = createCapsule(
-                        capsuleName, radius, length, entity.archetype.colors.pa_array
-                    )
-                    entity.archetype = newCapsule
-                    rr.log(entity.name, entity.archetype, recording=scene.rec)
-
-                    msg = (
-                        f"resizeCapsule('{capsuleName}'): Logging new Capsules3D "
-                        f"'{entityName}' in '{sceneName}' scene."
-                    )
-                    logger.info(msg)
-                    return True
-                else:
-                    msg = (
-                        f"resizeCapsule({capsuleName}): Capsules3D '{entityName}' "
-                        f"does not exists in '{sceneName}' scene."
-                    )
-                    logger.error(msg)
-                    return False
-
-        entity = self._getEntity(capsuleName)
-        if not entity:
-            logger.error(
-                f"resizeCapsule(): Capsules3D '{capsuleName}' does not exists."
-            )
-            return False
-
-        newCapsule = createCapsule(
-            capsuleName, radius, length, entity.archetype.colors.pa_array
-        )
-        entity.archetype = newCapsule
-        if entity.scenes:
-            for scene in entity.scenes:
-                rr.log(entity.name, entity.archetype, recording=scene.rec)
-                msg = (
-                    f"resizeCapsule(): Logging a new Capsules3D named '{entity.name}' "
-                    f"in '{scene.name}' scene."
+        group = self._getNodeInTree(self.groupTree, capsuleName)
+        if group is None:
+            entity = self._getEntity(capsuleName)
+            if entity is None:
+                logger.error(
+                    f"resizeCapsule(): Capsule '{capsuleName}' does not exists."
                 )
-                logger.info(msg)
+                return False
+            newCapsule = createCapsule(
+                capsuleName, radius, length, entity.archetype.colors.pa_array
+            )
+            entity.archetype = newCapsule
+            logger.info(
+                f"resizeCapsule(): Creating a new capsule called '{capsuleName}'."
+                "resizeCapsule() does not log it."
+            )
+            return True
         else:
-            msg = f"resizeCapsule(): Resizing an Capsules3D named '{entity.name}'."
-            logger.info(msg)
+            if not isinstance(group.value, Entity):
+                logger.error(
+                    f"resizeCapsule(): group '{group.name}' is not of type Entity"
+                )
+                return False
+            entity = group.value
+            newCapsule = createCapsule(
+                capsuleName, radius, length, entity.archetype.colors.pa_array
+            )
+            entity.archetype = newCapsule
+            logger.info(
+                f"resizeCapsule(): Creating a new capsule called '{capsuleName}' and log it."
+            )
+            self._logEntity(group)
         return True
 
     def addLine(
@@ -557,7 +513,7 @@ class Gui:
                 return foundNode
 
     def _getGroupInTree(self, root: Group, groupName: str) -> Group | None:
-        """Get a group in self.groupTree"""
+        """Get a group node in self.groupTree"""
         if root is None:
             return None
         if root.name == groupName and root.value is None:
