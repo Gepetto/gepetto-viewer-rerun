@@ -40,3 +40,10 @@ class Group:
     name: str
     value: Scene | Entity | None = None
     children: List["Group"] = field(default_factory=list)
+
+    def add_child(self, child: "Group"):
+        assert isinstance(
+            child, Group
+        ), "Group.add_child(): Parameter 'child' must of type Group"
+
+        self.children.append(child)
