@@ -4,6 +4,7 @@ from typing import List, Union
 
 import numpy as np
 import rerun as rr
+import rerun.blueprint as rrb
 
 from .entity import Entity, Group
 from .scene import Scene
@@ -116,7 +117,7 @@ class Gui:
             groupName = archetypeName[:charIndex]
             group = self._getNodeInTree(self.groupTree, groupName)
             entityName = archetypeName[charIndex + 1 :]
-            entity = Entity(entityName, archetype)
+            entity = Entity(entityName, archetypeType, archetype)
             self.entityList[archetypeType.value].append(entity)
 
             if group is None:
@@ -129,7 +130,7 @@ class Gui:
             self.addToGroup(entityName, groupName)
             return
         # Create entity and store it to self.entityList
-        entity = Entity(archetypeName, archetype)
+        entity = Entity(archetypeName, archetypeType, archetype)
         self.entityList[archetypeType.value].append(entity)
         logger.info(f"_parseEntity(): Creating entity '{archetypeName}'.")
 
@@ -523,14 +524,15 @@ class Gui:
             if foundNode:
                 return foundNode
 
-    def _getSceneParent(self, target: Group) -> Group | None:
+    def _getSceneParent(self, target: Group) -> Scene | None:
         """
         Browse tree to find the last Scene parent of the given node
         """
 
         def dfs(current: Group, targetNode: Group, lastScene: Group = None):
             if current == targetNode:
-                return lastScene.value
+                if lastScene is not None:
+                    return lastScene.value
             if isinstance(current.value, Scene):
                 lastScene = current
             for child in current.children:
@@ -609,4 +611,69 @@ class Gui:
         logger.info(
             "createGroup(): does not create the group, group is create when calling addToGroup()."
         )
+        return True
+
+    def _getNodeParent(
+        self, root: Group, nodeName: str, parent: Group = None
+    ) -> Group | None:
+        """Get the parent of the node"""
+        if root is None:
+            return None
+        if nodeName in root.name + "/":
+            return parent
+        for child in root.children:
+            foundNode = self._getNodeParent(child, nodeName, root)
+            if foundNode:
+                return foundNode
+
+    def deleteNode(self, nodeName: str, all: bool) -> bool:
+        def deleteGroupValue(group: Group):
+            if group is None:
+                return
+            for child in group.children:
+                deleteGroupValue(child)
+            if group.value is None:
+                if group.name in self.groupList:
+                    self.groupList.remove(group.value)
+            elif isinstance(group.value, Scene):
+                if group.value in self.sceneList:
+                    self.sceneList.remove(group.value)
+            elif isinstance(group.value, Entity):
+                entity = self._getEntity(node.value.name)
+                if entity is not None:
+                    self.entityList[entity.type.value].remove(group.value)
+
+        node = self._getNodeInTree(self.groupTree, nodeName)
+        if node is None:
+            logger.error(f"deleteNode(): Node '{nodeName}' does not exists.")
+            return False
+        parent = self._getNodeParent(self.groupTree, nodeName)
+        if parent is None:
+            logger.error(f"deleteNode(): No parent found for node '{nodeName}'.")
+            return False
+
+        scene = self._getSceneParent(node)
+        parent.children.remove(node)
+
+        if scene is None:
+            logger.info(f"deleteNode(): No parent scene for {node.name}.")
+            if all:
+                deleteGroupValue(node)
+                return True
+            return True
+
+        if isinstance(node.value, Entity):
+            for s in node.value.scenes:
+                rr.send_blueprint(
+                    rrb.Spatial3DView(contents="- " + parent.name + "/**"),
+                    recording=s.rec,
+                )
+        else:
+            rr.send_blueprint(
+                rrb.Spatial3DView(contents="- " + parent.name + "/**"),
+                recording=scene.rec,
+            )
+        logger.info(f"deleteNode(): Removing node '{nodeName}'.")
+        if all:
+            deleteGroupValue(node)
         return True

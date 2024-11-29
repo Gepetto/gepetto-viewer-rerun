@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from typing import Union, List
 import pathlib
 from .scene import Scene
+from .archetype import Archetype
 
 
 @dataclass
@@ -13,6 +14,7 @@ class Entity:
     """
 
     name: str
+    type: Archetype
     archetype: rr.archetypes
     scenes: List[Scene] | None = None
 
