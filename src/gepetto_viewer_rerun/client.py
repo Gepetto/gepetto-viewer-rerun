@@ -592,6 +592,10 @@ class Gui:
         return True
 
     def _makeGroup(self, groupName: str) -> Group:
+        """
+        Given a groupName, it will create a group
+        and its children, with '/' as separator.
+        """
         split = groupName.strip("/").split("/")
         root = Group(split[0])
         current = root
