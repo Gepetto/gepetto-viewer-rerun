@@ -628,6 +628,9 @@ class Gui:
 
     def deleteNode(self, nodeName: str, all: bool) -> bool:
         def deleteGroupValue(group: Group):
+            """
+            Remove group value (and its children) in self.window/scene/entity/groupList
+            """
             if group is None:
                 return
             for child in group.children:
