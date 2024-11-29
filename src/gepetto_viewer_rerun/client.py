@@ -487,7 +487,7 @@ class Gui:
         """Get a node in self.groupTree, regardless of its type"""
         if root is None:
             return None
-        if groupName in root.name:
+        if groupName in root.name + "/":
             return root
         for child in root.children:
             foundNode = self._getNodeInTree(child, groupName)
@@ -548,6 +548,18 @@ class Gui:
             isinstance(name, str) for name in [nodeName, groupName]
         ), "Parameters 'nodeName' and 'groupName' must be strings"
 
+        def format_string(first: str, second: str) -> str:
+            """
+            Remove last '/' of `first` and first '/' of `second`.
+            Return first + '/' + second
+            """
+
+            if first.endswith("/"):
+                first = first[:-1]
+            if second.startswith("/"):
+                second = second[1:]
+            return first + "/" + second
+
         entity = self._getEntity(nodeName)
         groupIndex = self._getNotAddedGroup(nodeName)
         if entity is None and groupIndex == -1:
@@ -559,11 +571,8 @@ class Gui:
             logger.error(f"addToGroup(): group '{groupName}' does not exists.")
             return False
 
-        if group.name[-1] != "/" and nodeName[0] != "/":
-            nodeName = group.name + "/" + nodeName
-        else:
-            nodeName = group.name + nodeName
         if entity:
+            nodeName = format_string(group.name, nodeName)
             newGroup = Group(nodeName, entity)
             group.add_child(newGroup)
             sceneAncestor = self._getSceneParent(newGroup)
@@ -573,13 +582,15 @@ class Gui:
             self._logEntity(newGroup)
         elif groupIndex != -1:
             newGroup = self._makeGroup(nodeName)
-            newGroup.name = groupName + newGroup.name
+            newGroup.name = format_string(group.name, newGroup.name)
+            for child in newGroup.children:
+                child.name = format_string(group.name, child.name)
             group.add_child(newGroup)
             logger.info(f"addToGroup(): Creating '{newGroup.name}' group.")
         return True
 
     def _makeGroup(self, groupName: str) -> Group:
-        split = groupName.split("/")
+        split = groupName.strip("/").split("/")
         root = Group(split[0])
         current = root
         current_path = split[0]
