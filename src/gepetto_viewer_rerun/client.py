@@ -589,6 +589,7 @@ class Gui:
                 child.name = format_string(group.name, child.name)
             group.add_child(newGroup)
             logger.info(f"addToGroup(): Creating '{newGroup.name}' group.")
+        self._draw_spacial_view_content()
         return True
 
     def _makeGroup(self, groupName: str) -> Group:
@@ -630,6 +631,29 @@ class Gui:
             if foundNode:
                 return foundNode
 
+    def _draw_spacial_view_content(self):
+        def make_space_view_content(scene: Scene, node: Group) -> List[str]:
+            """Make the SpaceViewContens for a given Scene"""
+
+            content = []
+            if node is None:
+                return content
+            if isinstance(node.value, Entity) and scene in node.value.scenes:
+                content.append("+ " + node.name)
+            elif node.value is None and scene.name in node.name:
+                # Ensure the node is a group and it is displayed in the scene parameter
+                content.append("+ " + node.name)
+            for child in node.children:
+                content.extend(make_space_view_content(scene, child))
+            return content
+
+        for scene in self.sceneList:
+            content = make_space_view_content(scene, self.groupTree)
+            rr.send_blueprint(
+                rrb.Spatial3DView(contents=content),
+                recording=scene.rec,
+            )
+
     def deleteNode(self, nodeName: str, all: bool) -> bool:
         def deleteGroupValue(group: Group):
             """
@@ -669,17 +693,7 @@ class Gui:
                 return True
             return True
 
-        if isinstance(node.value, Entity):
-            for s in node.value.scenes:
-                rr.send_blueprint(
-                    rrb.Spatial3DView(contents="- " + parent.name + "/**"),
-                    recording=s.rec,
-                )
-        else:
-            rr.send_blueprint(
-                rrb.Spatial3DView(contents="- " + parent.name + "/**"),
-                recording=scene.rec,
-            )
+        self._draw_spacial_view_content()
         logger.info(f"deleteNode(): Removing node '{nodeName}'.")
         if all:
             deleteGroupValue(node)
