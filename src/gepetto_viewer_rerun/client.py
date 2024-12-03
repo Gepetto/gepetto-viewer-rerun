@@ -24,32 +24,32 @@ class Client:
 class Gui:
     def __init__(self):
         """
-        sceneList : List of `Scene` class (name and associated recording)
-        windowList : List of all window names
-        entityList : List containing every Rerun archetypes,
+        scene_list : List of `Scene` class (name and associated recording)
+        window_list : List of all window names
+        entity_list : List containing every Rerun archetypes,
                     each archetypes contain a list of `Entity` class.
                     Use `Enum Archetype` to get indices.
         """
 
-        self.sceneList = []
-        self.windowList = []
-        self.entityList = [[] for _ in range(len(Archetype))]
+        self.scene_list = []
+        self.window_list = []
+        self.entity_list = [[] for _ in range(len(Archetype))]
         self.groupList = []
         self.groupTree = Group("/", None, [])
 
     def __repr__(self):
         return (
-            f"Gui(windowList={self.windowList}\n"
-            f"sceneList (size: {len(self.sceneList)}) = {self.sceneList}\n"
-            f"entityList (size: {len(self.entityList)}) = {self.entityList}\n"
+            f"Gui(window_list={self.window_list}\n"
+            f"scene_list (size: {len(self.scene_list)}) = {self.scene_list}\n"
+            f"entity_list (size: {len(self.entity_list)}) = {self.entity_list}\n"
             f"groupTree = {self.groupTree})\n"
             f"groupList (size: {len(self.groupList)}) : {self.groupList}\n"
         )
 
-    def createWindow(self, name: str):
+    def createWindow(self, name: str) -> str:
         assert isinstance(name, str), "Parameter 'name' must be a string"
 
-        self.windowList.append(name)
+        self.window_list.append(name)
         msg = (
             "createWindow() does not create any window, "
             "Rerun create both window and scene at the same time. "
@@ -61,7 +61,7 @@ class Gui:
     def createScene(self, sceneName: str):
         assert isinstance(sceneName, str), "Parameter 'sceneName' must be a string"
 
-        self.sceneList.append(Scene(sceneName))
+        self.scene_list.append(Scene(sceneName))
         msg = (
             "createScene() does not create any scene yet, "
             "Rerun create both window and scene at the same time. "
@@ -69,33 +69,33 @@ class Gui:
         )
         logger.info(msg)
 
-    def _getSceneIndex(self, sceneName: str):
-        for index, scene in enumerate(self.sceneList):
+    def _get_scene_index(self, sceneName: str) -> int:
+        for index, scene in enumerate(self.scene_list):
             if scene.name == sceneName:
                 return index
         return -1
 
-    def addSceneToWindow(self, sceneName: str, wid: str):
+    def addSceneToWindow(self, sceneName: str, wid: str) -> bool:
         assert all(
             isinstance(name, str) for name in [sceneName, wid]
         ), "Parameters 'sceneName' and 'wid' must be strings"
 
-        index = self._getSceneIndex(sceneName)
+        index = self._get_scene_index(sceneName)
         if index == -1:
             logger.error(f"addSceneToWindow(): Unknown sceneName '{sceneName}'.")
             return False
-        elif wid not in self.windowList:
+        elif wid not in self.window_list:
             logger.error(f"addSceneToWindow(): Unknown windowName '{wid}'.")
             return False
 
         rec = rr.new_recording(application_id=wid, recording_id=sceneName, spawn=True)
-        self.sceneList[index].setRec(rec)
-        scene = Group(sceneName, self.sceneList[index], [])
+        self.scene_list[index].set_rec(rec)
+        scene = Group(sceneName, self.scene_list[index], [])
         window = Group(wid, None, [scene])
         self.groupTree.add_child(window)
         return True
 
-    def _parseEntity(
+    def _parse_entity(
         self, archetypeName: str, archetype: rr.archetypes, archetypeType: Archetype
     ):
         """
@@ -106,10 +106,10 @@ class Gui:
             - if there is no '/', archetype will require addToGroup() to be added to
                 self.groupTree
         """
-        assert archetype is not None, "_parseEntity(): 'entity' must not be None"
+        assert archetype is not None, "_parse_entity(): 'entity' must not be None"
         assert isinstance(
             archetypeType, Archetype
-        ), "_parseEntity(): 'archetypeType' must be of type `enum Archetype`"
+        ), "_parse_entity(): 'archetypeType' must be of type `enum Archetype`"
 
         char_index = archetypeName.find("/")
         # If entity_name contains '/' then create Entity and search for the group
@@ -134,19 +134,19 @@ class Gui:
         self.entityList[archetypeType.value].append(entity)
         logger.info(f"_parseEntity(): Creating entity '{archetypeName}'.")
 
-    def _getEntity(self, entityName: str):
-        for entity_list in self.entityList:
+    def _get_entity(self, entityName: str) -> Entity | None:
+        for entity_list in self.entity_list:
             for entity in entity_list:
                 if entity.name == entityName:
                     return entity
         return None
 
-    def _isEntityInScene(self, entity: Entity, scene: Scene):
+    def _is_entity_in_scene(self, entity: Entity, scene: Scene) -> bool:
         if entity and entity.scenes:
             return scene in entity.scenes
         return False
 
-    def addFloor(self, floorName: str):
+    def addFloor(self, floorName: str) -> bool:
         assert isinstance(floorName, str), "Parameter 'floorName' must be a string"
 
         floor = rr.Boxes3D(
@@ -154,7 +154,7 @@ class Gui:
             colors=[(125, 125, 125)],
             fill_mode="Solid",
         )
-        self._parseEntity(floorName, floor, Archetype.BOXES3D)
+        self._parse_entity(floorName, floor, Archetype.BOXES3D)
         return True
 
     def addBox(
@@ -164,7 +164,7 @@ class Gui:
         boxSize2: List[Union[int, float]],
         boxSize3: List[Union[int, float]],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(boxName, str), "Parameter 'boxName' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [boxSize1, boxSize2, boxSize3]
@@ -179,7 +179,7 @@ class Gui:
             fill_mode="Solid",
             labels=[boxName],
         )
-        self._parseEntity(boxName, box, Archetype.BOXES3D)
+        self._parse_entity(boxName, box, Archetype.BOXES3D)
         return True
 
     def addArrow(
@@ -188,7 +188,7 @@ class Gui:
         radius: Union[int, float],
         length: Union[int, float],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, length]
@@ -206,12 +206,12 @@ class Gui:
             colors=[RGBAcolor],
             labels=[name],
         )
-        self._parseEntity(name, arrow, Archetype.ARROWS3D)
+        self._parse_entity(name, arrow, Archetype.ARROWS3D)
         return True
 
     def resizeArrow(
         self, arrowName: str, radius: Union[int, float], length: Union[int, float]
-    ):
+    ) -> bool:
         assert isinstance(arrowName, str), "Parameter 'arrowName' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, length]
@@ -222,7 +222,7 @@ class Gui:
             radius: Union[int, float],
             length: Union[int, float],
             colors: List[Union[int, float]],
-        ):
+        ) -> rr.archetypes.arrows3d.Arrows3D:
             angle = np.arange(start=0, stop=tau, step=tau)
             vectors = np.column_stack(
                 [np.sin(angle) * length, np.zeros(1), np.cos(angle) * length]
@@ -273,7 +273,7 @@ class Gui:
         radius: Union[int, float],
         height: Union[int, float],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, height]
@@ -288,12 +288,12 @@ class Gui:
             colors=[RGBAcolor],
             labels=[name],
         )
-        self._parseEntity(name, capsule, Archetype.CAPSULES3D)
+        self._parse_entity(name, capsule, Archetype.CAPSULES3D)
         return True
 
     def resizeCapsule(
         self, capsuleName: str, radius: Union[int, float], length: Union[int, float]
-    ):
+    ) -> bool:
         assert isinstance(capsuleName, str), "Parameter 'capsuleName' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, length]
@@ -304,7 +304,7 @@ class Gui:
             radius: Union[int, float],
             length: Union[int, float],
             colors: List[Union[int, float]],
-        ):
+        ) -> rr.archetypes.capsules3d.Capsules3D:
             capsule = rr.Capsules3D(
                 radii=[radius],
                 lengths=length,
@@ -353,7 +353,7 @@ class Gui:
         pos1: List[Union[int, float]],
         pos2: List[Union[int, float]],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(lineName, str), "Parameter 'lineName' must be a string"
         assert all(
             isinstance(x, (list, tuple)) for x in [pos1, pos2]
@@ -371,7 +371,7 @@ class Gui:
             colors=[RGBAcolor],
             labels=[lineName],
         )
-        self._parseEntity(lineName, line, Archetype.LINESTRIPS3D)
+        self._parse_entity(lineName, line, Archetype.LINESTRIPS3D)
         return True
 
     def addSquareFace(
@@ -382,7 +382,7 @@ class Gui:
         pos3: List[Union[int, float]],
         pos4: List[Union[int, float]],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(faceName, str), "Parameter 'faceName' must be a string"
         assert all(
             isinstance(x, (list, tuple)) for x in [pos1, pos2, pos3, pos4]
@@ -399,7 +399,7 @@ class Gui:
             triangle_indices=[[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]],
             vertex_colors=[RGBAcolor],
         )
-        self._parseEntity(faceName, mesh, Archetype.MESH3D)
+        self._parse_entity(faceName, mesh, Archetype.MESH3D)
         return True
 
     def addTriangleFace(
@@ -409,7 +409,7 @@ class Gui:
         pos2: List[Union[int, float]],
         pos3: List[Union[int, float]],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(faceName, str), "Parameter 'faceName' must be a string"
         assert all(
             isinstance(x, (list, tuple)) for x in [pos1, pos2, pos3]
@@ -429,7 +429,7 @@ class Gui:
             vertex_colors=[RGBAcolor],
         )
 
-        self._parseEntity(faceName, mesh, Archetype.MESH3D)
+        self._parse_entity(faceName, mesh, Archetype.MESH3D)
         return True
 
     def addSphere(
@@ -437,7 +437,7 @@ class Gui:
         sphereName: str,
         radius: Union[int, float],
         RGBAcolor: List[Union[int, float]],
-    ):
+    ) -> bool:
         assert isinstance(sphereName, str), "Parameter 'sphereName' must be a string"
         assert isinstance(
             radius, (int, float)
@@ -452,12 +452,12 @@ class Gui:
             colors=[RGBAcolor],
             labels=[sphereName],
         )
-        self._parseEntity(sphereName, sphere, Archetype.POINTS3D)
+        self._parse_entity(sphereName, sphere, Archetype.POINTS3D)
         return True
 
-    def _getRecording(self, recName: str):
+    def _get_recording(self, recName: str) -> rr.RecordingStream | None:
         return next(
-            (scene.rec for scene in self.sceneList if scene.name == recName), None
+            (scene.rec for scene in self.scene_list if scene.name == recName), None
         )
 
     def _log_entity(self, group: Group):

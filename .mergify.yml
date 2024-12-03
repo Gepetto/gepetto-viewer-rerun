@@ -1,0 +1,20 @@
+pull_request_rules:
+  - name: merge automatically when CI passes and PR is approved
+    conditions:
+      - check-success = "nix (macos)"
+      - check-success = "nix (ubuntu)"
+      - check-success = "uv (macos, 3.10)"
+      - check-success = "uv (macos, 3.11)"
+      - check-success = "uv (macos, 3.12)"
+      - check-success = "uv (macos, 3.13)"
+      - check-success = "uv (ubuntu, 3.10)"
+      - check-success = "uv (ubuntu, 3.11)"
+      - check-success = "uv (ubuntu, 3.12)"
+      - check-success = "uv (ubuntu, 3.13)"
+      - check-success = "pre-commit.ci - pr"
+      - or:
+        - author = pre-commit-ci[bot]
+        - author = dependabot[bot]
+        - approved-reviews-by = nim65s
+    actions:
+      merge:
