@@ -604,7 +604,7 @@ class Gui:
                     child.name = format_string(group.name, child.name)
                 group.add_child(newGroup)
                 logger.info(f"addToGroup(): Creating '{newGroup.name}' group.")
-            self._draw_spacial_view_content()
+        self._draw_spacial_view_content()
         return True
 
     def _makeGroup(self, groupName: str) -> Group:
@@ -653,7 +653,11 @@ class Gui:
             content = []
             if node is None:
                 return content
-            if isinstance(node.value, Entity) and scene in node.value.scenes:
+            if (
+                isinstance(node.value, Entity)
+                and scene.name in node.name
+                and scene in node.value.scenes
+            ):
                 content.append("+ " + node.name)
             elif node.value is None and scene.name in node.name:
                 # Ensure the node is a group and it is displayed in the scene parameter
@@ -662,6 +666,10 @@ class Gui:
                 content.extend(make_space_view_content(scene, child))
             return content
 
+        # There is a bug with rerun 0.20 :when sending
+        # different blueprints to recordings that are
+        # in the same application - 03/12/2024
+        # Linked issue : https://github.com/rerun-io/rerun/issues/8287
         for scene in self.sceneList:
             content = make_space_view_content(scene, self.groupTree)
             rr.send_blueprint(
