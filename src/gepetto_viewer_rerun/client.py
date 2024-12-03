@@ -692,6 +692,10 @@ class Gui:
 
         node_list = self._get_node_list_in_tree(self.groupTree, nodeName)
         if not node_list:
+            # If node isn't already in tree, check in self.groupList
+            if nodeName in self.groupList:
+                self.groupList.remove(nodeName)
+                return True
             logger.error(f"deleteNode(): Node '{nodeName}' does not exists.")
             return False
         parent_list = self._get_node_parent_list(self.groupTree, nodeName)
