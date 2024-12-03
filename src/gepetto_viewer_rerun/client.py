@@ -121,11 +121,11 @@ class Gui:
             self.entityList[archetypeType.value].append(entity)
 
             if group is None:
-                logger.info("_parseEntity(): call to createGroup()")
+                logger.info(f"_parseEntity(): call to createGroup({groupName})")
                 self.createGroup(groupName)
             logger.info(
                 f"_parseEntity(): create entity '{entityName}' of type {archetypeType.name}."
-                f"_parseEntity(): call to addToGroup()."
+                f"_parseEntity(): call to addToGroup({entityName}, {groupName})."
             )
             self.addToGroup(entityName, groupName)
             return
@@ -495,6 +495,20 @@ class Gui:
             if foundNode:
                 return foundNode
 
+    def _getNodeListInTree(self, root: Group, groupName: str) -> List[Group]:
+        """
+        Get all the node in self.groupTree,
+        regardless of its type, based on its name
+        """
+        if root is None:
+            return []
+        nodeList = []
+        if groupName in root.name + "/":
+            nodeList.append(root)
+        for child in root.children:
+            nodeList.extend(self._getNodeListInTree(child, groupName))
+        return nodeList
+
     def _getNotAddedGroup(self, groupName: str) -> int:
         """Return the index of the groupName in self.groupList"""
         for i in range(len(self.groupList)):
@@ -618,18 +632,18 @@ class Gui:
         )
         return True
 
-    def _getNodeParent(
+    def _getNodeParentList(
         self, root: Group, nodeName: str, parent: Group = None
-    ) -> Group | None:
-        """Get the parent of the node"""
+    ) -> List[Group]:
+        """Get all the parent of the node"""
         if root is None:
-            return None
+            return []
+        parents = []
         if nodeName in root.name + "/":
-            return parent
+            parents.append(parent)
         for child in root.children:
-            foundNode = self._getNodeParent(child, nodeName, root)
-            if foundNode:
-                return foundNode
+            parents.extend(self._getNodeParentList(child, nodeName, root))
+        return parents
 
     def _draw_spacial_view_content(self):
         def make_space_view_content(scene: Scene, node: Group) -> List[str]:
@@ -674,27 +688,24 @@ class Gui:
                 if entity is not None:
                     self.entityList[entity.type.value].remove(group.value)
 
-        node = self._getNodeInTree(self.groupTree, nodeName)
-        if node is None:
+        nodeList = self._getNodeListInTree(self.groupTree, nodeName)
+        if not nodeList:
             logger.error(f"deleteNode(): Node '{nodeName}' does not exists.")
             return False
-        parent = self._getNodeParent(self.groupTree, nodeName)
-        if parent is None:
+        parentList = self._getNodeParentList(self.groupTree, nodeName)
+        if not parentList:
             logger.error(f"deleteNode(): No parent found for node '{nodeName}'.")
             return False
-
-        scene = self._getSceneParent(node)
-        parent.children.remove(node)
-
-        if scene is None:
-            logger.info(f"deleteNode(): No parent scene for {node.name}.")
+        for node, parent in zip(nodeList, parentList):
+            scene = self._getSceneParent(node)
+            parent.children.remove(node)
+            if scene is None:
+                logger.info(f"deleteNode(): No parent scene for {node.name}.")
+                if all:
+                    deleteGroupValue(node)
+                continue
+            self._draw_spacial_view_content()
+            logger.info(f"deleteNode(): Removing node '{node.name}'.")
             if all:
                 deleteGroupValue(node)
-                return True
-            return True
-
-        self._draw_spacial_view_content()
-        logger.info(f"deleteNode(): Removing node '{nodeName}'.")
-        if all:
-            deleteGroupValue(node)
         return True
