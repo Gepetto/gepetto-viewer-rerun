@@ -235,8 +235,8 @@ class Gui:
             )
             return arrow
 
-        group = self._getNodeInTree(self.groupTree, arrowName)
-        if group is None:
+        groupList = self._getNodeListInTree(self.groupTree, arrowName)
+        if not groupList:
             entity = self._getEntity(arrowName)
             if entity is None:
                 logger.error(f"resizeArrow(): Arrow '{arrowName}' does not exists.")
@@ -249,22 +249,22 @@ class Gui:
                 f"resizeArrow(): Creating a new arrow called '{arrowName}'."
                 "resizeArrow() does not log it."
             )
-            return True
         else:
-            if not isinstance(group.value, Entity):
-                logger.error(
-                    f"resizeArrow(): group '{group.name}' is not of type Entity"
+            for group in groupList:
+                if not isinstance(group.value, Entity):
+                    logger.error(
+                        f"resizeArrow(): group '{group.name}' is not of type Entity"
+                    )
+                    return False
+                entity = group.value
+                newArrow = createArrow(
+                    arrowName, radius, length, entity.archetype.colors.pa_array
                 )
-                return False
-            entity = group.value
-            newArrow = createArrow(
-                arrowName, radius, length, entity.archetype.colors.pa_array
-            )
-            entity.archetype = newArrow
-            logger.info(
-                f"resizeArrow(): Creating a new arrow called '{arrowName}' and log it."
-            )
-            self._logEntity(group)
+                entity.archetype = newArrow
+                logger.info(
+                    f"resizeArrow(): Creating a new arrow called '{arrowName}' and log it."
+                )
+                self._logEntity(group)
         return True
 
     def addCapsule(
@@ -313,8 +313,8 @@ class Gui:
             )
             return capsule
 
-        group = self._getNodeInTree(self.groupTree, capsuleName)
-        if group is None:
+        groupList = self._getNodeListInTree(self.groupTree, capsuleName)
+        if not groupList:
             entity = self._getEntity(capsuleName)
             if entity is None:
                 logger.error(
@@ -329,22 +329,22 @@ class Gui:
                 f"resizeCapsule(): Creating a new capsule called '{capsuleName}'."
                 "resizeCapsule() does not log it."
             )
-            return True
         else:
-            if not isinstance(group.value, Entity):
-                logger.error(
-                    f"resizeCapsule(): group '{group.name}' is not of type Entity"
+            for group in groupList:
+                if not isinstance(group.value, Entity):
+                    logger.error(
+                        f"resizeCapsule(): group '{group.name}' is not of type Entity"
+                    )
+                    return False
+                entity = group.value
+                newCapsule = createCapsule(
+                    capsuleName, radius, length, entity.archetype.colors.pa_array
                 )
-                return False
-            entity = group.value
-            newCapsule = createCapsule(
-                capsuleName, radius, length, entity.archetype.colors.pa_array
-            )
-            entity.archetype = newCapsule
-            logger.info(
-                f"resizeCapsule(): Creating a new capsule called '{capsuleName}' and log it."
-            )
-            self._logEntity(group)
+                entity.archetype = newCapsule
+                logger.info(
+                    f"resizeCapsule(): Creating a new capsule called '{capsuleName}' and log it."
+                )
+                self._logEntity(group)
         return True
 
     def addLine(
