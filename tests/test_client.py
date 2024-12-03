@@ -12,4 +12,29 @@ class TestClient(unittest.TestCase):
 
     def test_add_to_group(self):
         self.client = Client()
-        self.assertEqual(self.client.gui.addToGroup("test", "s1"), False)
+        self.assertFalse(self.client.gui.addToGroup("test", "s1"))
+
+    def test_create_group(self):
+        self.client = Client()
+
+        res = self.client.gui.createGroup("hello")
+        self.assertTrue(res)
+
+        res = self.client.gui.createGroup("world")
+        self.assertTrue(res)
+        self.assertEqual(self.client.gui.groupList, ["hello", "world"])
+
+    def test_delete_node(self):
+        self.client = Client()
+
+        res = self.client.gui.deleteNode("hello", True)
+        self.assertFalse(res)
+
+        self.client.gui.createGroup("hello")
+        self.assertEqual(self.client.gui.groupList, ["hello"])
+
+        self.client.gui.deleteNode("hello", True)
+        self.assertEqual(self.client.gui.groupList, [])
+
+        self.client.gui.addSphere("sphere", 2, (255, 255, 0, 255))
+        self.assertFalse(self.client.gui.deleteNode("sphere", True))
