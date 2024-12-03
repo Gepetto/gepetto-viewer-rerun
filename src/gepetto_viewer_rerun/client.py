@@ -593,7 +593,7 @@ class Gui:
                 newGroup = Group(newNodeName, entity)
                 group.add_child(newGroup)
                 sceneAncestor = self._getSceneParent(newGroup)
-                if sceneAncestor is not None:
+                if sceneAncestor is not None and sceneAncestor not in entity.scenes:
                     entity.addScene(sceneAncestor)
                 logger.info(f"addToGroup(): Creating '{newGroup.name}' entity group.")
                 self._logEntity(newGroup)
