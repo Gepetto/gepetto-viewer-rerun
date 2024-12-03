@@ -589,8 +589,8 @@ class Gui:
 
         for group in groupList:
             if entity:
-                nodeName = format_string(group.name, nodeName)
-                newGroup = Group(nodeName, entity)
+                newNodeName = format_string(group.name, nodeName)
+                newGroup = Group(newNodeName, entity)
                 group.add_child(newGroup)
                 sceneAncestor = self._getSceneParent(newGroup)
                 if sceneAncestor is not None:
