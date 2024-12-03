@@ -582,28 +582,29 @@ class Gui:
             logger.error(f"addToGroup(): node '{nodeName}' does not exists.")
             return False
 
-        group = self._getNodeInTree(self.groupTree, groupName)
-        if group is None:
+        groupList = self._getNodeListInTree(self.groupTree, groupName)
+        if not groupList:
             logger.error(f"addToGroup(): group '{groupName}' does not exists.")
             return False
 
-        if entity:
-            nodeName = format_string(group.name, nodeName)
-            newGroup = Group(nodeName, entity)
-            group.add_child(newGroup)
-            sceneAncestor = self._getSceneParent(newGroup)
-            if sceneAncestor is not None:
-                entity.addScene(sceneAncestor)
-            logger.info(f"addToGroup(): Creating '{newGroup.name}' entity group.")
-            self._logEntity(newGroup)
-        elif groupIndex != -1:
-            newGroup = self._makeGroup(nodeName)
-            newGroup.name = format_string(group.name, newGroup.name)
-            for child in newGroup.children:
-                child.name = format_string(group.name, child.name)
-            group.add_child(newGroup)
-            logger.info(f"addToGroup(): Creating '{newGroup.name}' group.")
-        self._draw_spacial_view_content()
+        for group in groupList:
+            if entity:
+                nodeName = format_string(group.name, nodeName)
+                newGroup = Group(nodeName, entity)
+                group.add_child(newGroup)
+                sceneAncestor = self._getSceneParent(newGroup)
+                if sceneAncestor is not None:
+                    entity.addScene(sceneAncestor)
+                logger.info(f"addToGroup(): Creating '{newGroup.name}' entity group.")
+                self._logEntity(newGroup)
+            elif groupIndex != -1:
+                newGroup = self._makeGroup(nodeName)
+                newGroup.name = format_string(group.name, newGroup.name)
+                for child in newGroup.children:
+                    child.name = format_string(group.name, child.name)
+                group.add_child(newGroup)
+                logger.info(f"addToGroup(): Creating '{newGroup.name}' group.")
+            self._draw_spacial_view_content()
         return True
 
     def _makeGroup(self, groupName: str) -> Group:
