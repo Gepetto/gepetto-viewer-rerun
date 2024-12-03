@@ -687,15 +687,15 @@ class Gui:
             for child in group.children:
                 deleteGroupValue(child)
             if group.value is None:
-                if group.name in self.groupList:
-                    self.groupList.remove(group.value)
+                if nodeName in self.groupList:
+                    self.groupList.remove(nodeName)
             elif isinstance(group.value, Scene):
                 if group.value in self.sceneList:
                     self.sceneList.remove(group.value)
             elif isinstance(group.value, Entity):
-                entity = self._getEntity(node.value.name)
-                if entity is not None:
-                    self.entityList[entity.type.value].remove(group.value)
+                entity = group.value
+                if entity in self.entityList[entity.type.value]:
+                    self.entityList[entity.type.value].remove(entity)
 
         nodeList = self._getNodeListInTree(self.groupTree, nodeName)
         if not nodeList:
