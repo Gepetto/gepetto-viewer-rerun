@@ -111,23 +111,23 @@ class Gui:
             archetypeType, Archetype
         ), "_parseEntity(): 'archetypeType' must be of type `enum Archetype`"
 
-        charIndex = archetypeName.find("/")
-        # If entityName contains '/' then create Entity and search for the group
-        if charIndex != -1 and charIndex != len(archetypeName) - 1:
-            groupName = archetypeName[:charIndex]
-            group = self._getNodeInTree(self.groupTree, groupName)
-            entityName = archetypeName[charIndex + 1 :]
-            entity = Entity(entityName, archetypeType, archetype)
+        char_index = archetypeName.find("/")
+        # If entity_name contains '/' then create Entity and search for the group
+        if char_index != -1 and char_index != len(archetypeName) - 1:
+            group_name = archetypeName[:char_index]
+            group = self._get_node_in_tree(self.groupTree, group_name)
+            entity_name = archetypeName[char_index + 1 :]
+            entity = Entity(entity_name, archetypeType, archetype)
             self.entityList[archetypeType.value].append(entity)
 
             if group is None:
-                logger.info(f"_parseEntity(): call to createGroup({groupName})")
-                self.createGroup(groupName)
+                logger.info(f"_parseEntity(): call to createGroup({group_name})")
+                self.createGroup(group_name)
             logger.info(
-                f"_parseEntity(): create entity '{entityName}' of type {archetypeType.name}."
-                f"_parseEntity(): call to addToGroup({entityName}, {groupName})."
+                f"_parseEntity(): create entity '{entity_name}' of type {archetypeType.name}."
+                f"_parseEntity(): call to addToGroup({entity_name}, {group_name})."
             )
-            self.addToGroup(entityName, groupName)
+            self.addToGroup(entity_name, group_name)
             return
         # Create entity and store it to self.entityList
         entity = Entity(archetypeName, archetypeType, archetype)
@@ -235,36 +235,36 @@ class Gui:
             )
             return arrow
 
-        groupList = self._getNodeListInTree(self.groupTree, arrowName)
-        if not groupList:
+        group_list = self._get_node_list_in_tree(self.groupTree, arrowName)
+        if not group_list:
             entity = self._getEntity(arrowName)
             if entity is None:
                 logger.error(f"resizeArrow(): Arrow '{arrowName}' does not exists.")
                 return False
-            newArrow = createArrow(
+            new_arrow = createArrow(
                 arrowName, radius, length, entity.archetype.colors.pa_array
             )
-            entity.archetype = newArrow
+            entity.archetype = new_arrow
             logger.info(
                 f"resizeArrow(): Creating a new arrow called '{arrowName}'."
                 "resizeArrow() does not log it."
             )
         else:
-            for group in groupList:
+            for group in group_list:
                 if not isinstance(group.value, Entity):
                     logger.error(
                         f"resizeArrow(): group '{group.name}' is not of type Entity"
                     )
                     return False
                 entity = group.value
-                newArrow = createArrow(
+                new_arrow = createArrow(
                     arrowName, radius, length, entity.archetype.colors.pa_array
                 )
-                entity.archetype = newArrow
+                entity.archetype = new_arrow
                 logger.info(
                     f"resizeArrow(): Creating a new arrow called '{arrowName}' and log it."
                 )
-                self._logEntity(group)
+                self._log_entity(group)
         return True
 
     def addCapsule(
@@ -313,38 +313,38 @@ class Gui:
             )
             return capsule
 
-        groupList = self._getNodeListInTree(self.groupTree, capsuleName)
-        if not groupList:
+        group_list = self._get_node_list_in_tree(self.groupTree, capsuleName)
+        if not group_list:
             entity = self._getEntity(capsuleName)
             if entity is None:
                 logger.error(
                     f"resizeCapsule(): Capsule '{capsuleName}' does not exists."
                 )
                 return False
-            newCapsule = createCapsule(
+            new_capsule = createCapsule(
                 capsuleName, radius, length, entity.archetype.colors.pa_array
             )
-            entity.archetype = newCapsule
+            entity.archetype = new_capsule
             logger.info(
                 f"resizeCapsule(): Creating a new capsule called '{capsuleName}'."
                 "resizeCapsule() does not log it."
             )
         else:
-            for group in groupList:
+            for group in group_list:
                 if not isinstance(group.value, Entity):
                     logger.error(
                         f"resizeCapsule(): group '{group.name}' is not of type Entity"
                     )
                     return False
                 entity = group.value
-                newCapsule = createCapsule(
+                new_capsule = createCapsule(
                     capsuleName, radius, length, entity.archetype.colors.pa_array
                 )
-                entity.archetype = newCapsule
+                entity.archetype = new_capsule
                 logger.info(
                     f"resizeCapsule(): Creating a new capsule called '{capsuleName}' and log it."
                 )
-                self._logEntity(group)
+                self._log_entity(group)
         return True
 
     def addLine(
@@ -460,7 +460,7 @@ class Gui:
             (scene.rec for scene in self.sceneList if scene.name == recName), None
         )
 
-    def _logEntity(self, group: Group):
+    def _log_entity(self, group: Group):
         """Draw a group entity in the Viewer"""
         entity = group.value
 
@@ -475,70 +475,48 @@ class Gui:
                         recording=scene.rec,
                     )
                     logger.info(
-                        f"_logEntity(): Logging entity '{entity.name}' in '{scene.name}' scene."
+                        f"_log_entity(): Logging entity '{entity.name}' in '{scene.name}' scene."
                     )
             return True
         else:
             logger.info(
-                f"_logEntity(): Logging entity '{entity.name}' don't have any scenes to be displayed in."
+                f"_log_entity(): Logging entity '{entity.name}' don't have any scenes to be displayed in."
             )
             return False
 
-    def _getNodeInTree(self, root: Group, groupName: str) -> Group | None:
+    def _get_node_in_tree(self, root: Group, group_name: str) -> Group | None:
         """Get a node in self.groupTree, regardless of its type"""
         if root is None:
             return None
-        if root.name.strip("/").endswith(groupName):
+        if root.name.strip("/").endswith(group_name):
             return root
         for child in root.children:
-            foundNode = self._getNodeInTree(child, groupName)
+            foundNode = self._get_node_in_tree(child, group_name)
             if foundNode:
                 return foundNode
 
-    def _getNodeListInTree(self, root: Group, groupName: str) -> List[Group]:
+    def _get_node_list_in_tree(self, root: Group, group_name: str) -> List[Group]:
         """
         Get all the node in self.groupTree,
         regardless of its type, based on its name
         """
         if root is None:
             return []
-        nodeList = []
-        if root.name.strip("/").endswith(groupName):
-            nodeList.append(root)
+        node_list = []
+        if root.name.strip("/").endswith(group_name):
+            node_list.append(root)
         for child in root.children:
-            nodeList.extend(self._getNodeListInTree(child, groupName))
-        return nodeList
+            node_list.extend(self._get_node_list_in_tree(child, group_name))
+        return node_list
 
-    def _getNotAddedGroup(self, groupName: str) -> int:
-        """Return the index of the groupName in self.groupList"""
+    def _get_not_added_group(self, group_name: str) -> int:
+        """Return the index of the group_name in self.groupList"""
         for i in range(len(self.groupList)):
-            if self.groupList[i] == groupName:
+            if self.groupList[i] == group_name:
                 return i
         return -1
 
-    def _getSceneInTree(self, root: Group, sceneName: str) -> Scene | None:
-        """Get a scene in self.groupTree"""
-        if root is None:
-            return None
-        if root.name == sceneName and isinstance(root.value, Scene):
-            return root
-        for child in root.children:
-            foundNode = self._getSceneInTree(child, sceneName)
-            if foundNode:
-                return foundNode
-
-    def _getGroupInTree(self, root: Group, groupName: str) -> Group | None:
-        """Get a group node in self.groupTree"""
-        if root is None:
-            return None
-        if root.name == groupName and root.value is None:
-            return root
-        for child in root.children:
-            foundNode = self._getGroupInTree(child, groupName)
-            if foundNode:
-                return foundNode
-
-    def _getSceneParent(self, target: Group) -> Scene | None:
+    def _get_scene_parent(self, target: Group) -> Scene | None:
         """
         Browse tree to find the last Scene parent of the given node
         """
@@ -588,46 +566,46 @@ class Gui:
             return first + "/" + second
 
         entity = self._getEntity(nodeName)
-        groupIndex = self._getNotAddedGroup(nodeName)
-        if entity is None and groupIndex == -1:
+        group_index = self._get_not_added_group(nodeName)
+        if entity is None and group_index == -1:
             logger.error(f"addToGroup(): node '{nodeName}' does not exists.")
             return False
 
-        groupList = self._getNodeListInTree(self.groupTree, groupName)
-        if not groupList:
+        group_list = self._get_node_list_in_tree(self.groupTree, groupName)
+        if not group_list:
             logger.error(f"addToGroup(): group '{groupName}' does not exists.")
             return False
 
-        for group in groupList:
+        for group in group_list:
             if entity and not self._is_node_in_group(entity, group):
-                newNodeName = format_string(group.name, nodeName)
-                newGroup = Group(newNodeName, entity)
-                group.add_child(newGroup)
-                sceneAncestor = self._getSceneParent(newGroup)
-                if sceneAncestor is not None and sceneAncestor not in entity.scenes:
-                    entity.addScene(sceneAncestor)
-                logger.info(f"addToGroup(): Creating '{newGroup.name}' entity group.")
-                self._logEntity(newGroup)
-            elif groupIndex != -1 and not self._is_node_in_group(
-                self.groupList[groupIndex], group
+                new_node_name = format_string(group.name, nodeName)
+                new_group = Group(new_node_name, entity)
+                group.add_child(new_group)
+                scene_ancestor = self._get_scene_parent(new_group)
+                if scene_ancestor is not None and scene_ancestor not in entity.scenes:
+                    entity.addScene(scene_ancestor)
+                logger.info(f"addToGroup(): Creating '{new_group.name}' entity group.")
+                self._log_entity(new_group)
+            elif group_index != -1 and not self._is_node_in_group(
+                self.group_list[group_index], group
             ):
-                newGroup = self._makeGroup(nodeName)
-                newGroup.name = format_string(group.name, newGroup.name)
-                for child in newGroup.children:
+                new_group = self._make_group(nodeName)
+                new_group.name = format_string(group.name, new_group.name)
+                for child in new_group.children:
                     child.name = format_string(group.name, child.name)
-                group.add_child(newGroup)
-                logger.info(f"addToGroup(): Creating '{newGroup.name}' group.")
+                group.add_child(new_group)
+                logger.info(f"addToGroup(): Creating '{new_group.name}' group.")
             else:
                 return False
         self._draw_spacial_view_content()
         return True
 
-    def _makeGroup(self, groupName: str) -> Group:
+    def _make_group(self, group_name: str) -> Group:
         """
-        Given a groupName, it will create a group
+        Given a group_name, it will create a group
         and its children, with '/' as separator.
         """
-        split = groupName.strip("/").split("/")
+        split = group_name.strip("/").split("/")
         root = Group(split[0])
         current = root
         current_path = split[0]
@@ -648,17 +626,17 @@ class Gui:
         )
         return True
 
-    def _getNodeParentList(
-        self, root: Group, nodeName: str, parent: Group = None
+    def _get_node_parent_list(
+        self, root: Group, node_name: str, parent: Group = None
     ) -> List[Group]:
         """Get all the parent of the node"""
         if root is None:
             return []
         parents = []
-        if nodeName in root.name + "/":
+        if node_name in root.name + "/":
             parents.append(parent)
         for child in root.children:
-            parents.extend(self._getNodeParentList(child, nodeName, root))
+            parents.extend(self._get_node_parent_list(child, node_name, root))
         return parents
 
     def _draw_spacial_view_content(self):
@@ -693,14 +671,14 @@ class Gui:
             )
 
     def deleteNode(self, nodeName: str, all: bool) -> bool:
-        def deleteGroupValue(group: Group):
+        def delete_group_value(group: Group):
             """
             Remove group value (and its children) in self.window/scene/entity/groupList
             """
             if group is None:
                 return
             for child in group.children:
-                deleteGroupValue(child)
+                delete_group_value(child)
             if group.value is None:
                 if nodeName in self.groupList:
                     self.groupList.remove(nodeName)
@@ -712,24 +690,24 @@ class Gui:
                 if entity in self.entityList[entity.type.value]:
                     self.entityList[entity.type.value].remove(entity)
 
-        nodeList = self._getNodeListInTree(self.groupTree, nodeName)
-        if not nodeList:
+        node_list = self._get_node_list_in_tree(self.groupTree, nodeName)
+        if not node_list:
             logger.error(f"deleteNode(): Node '{nodeName}' does not exists.")
             return False
-        parentList = self._getNodeParentList(self.groupTree, nodeName)
-        if not parentList:
+        parent_list = self._get_node_parent_list(self.groupTree, nodeName)
+        if not parent_list:
             logger.error(f"deleteNode(): No parent found for node '{nodeName}'.")
             return False
-        for node, parent in zip(nodeList, parentList):
-            scene = self._getSceneParent(node)
+        for node, parent in zip(node_list, parent_list):
+            scene = self._get_scene_parent(node)
             parent.children.remove(node)
             if scene is None:
                 logger.info(f"deleteNode(): No parent scene for {node.name}.")
                 if all:
-                    deleteGroupValue(node)
+                    delete_group_value(node)
                 continue
             self._draw_spacial_view_content()
             logger.info(f"deleteNode(): Removing node '{node.name}'.")
             if all:
-                deleteGroupValue(node)
+                delete_group_value(node)
         return True
