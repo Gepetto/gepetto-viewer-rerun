@@ -118,7 +118,7 @@ class Gui:
             group = self._get_node_in_tree(self.groupTree, group_name)
             entity_name = archetypeName[char_index + 1 :]
             entity = Entity(entity_name, archetypeType, archetype)
-            self.entityList[archetypeType.value].append(entity)
+            self.entity_list[archetypeType.value].append(entity)
 
             if group is None:
                 logger.info(f"_parseEntity(): call to createGroup({group_name})")
@@ -129,9 +129,9 @@ class Gui:
             )
             self.addToGroup(entity_name, group_name)
             return
-        # Create entity and store it to self.entityList
+        # Create entity and store it to self.entity_list
         entity = Entity(archetypeName, archetypeType, archetype)
-        self.entityList[archetypeType.value].append(entity)
+        self.entity_list[archetypeType.value].append(entity)
         logger.info(f"_parseEntity(): Creating entity '{archetypeName}'.")
 
     def _get_entity(self, entityName: str) -> Entity | None:
@@ -237,7 +237,7 @@ class Gui:
 
         group_list = self._get_node_list_in_tree(self.groupTree, arrowName)
         if not group_list:
-            entity = self._getEntity(arrowName)
+            entity = self._get_entity(arrowName)
             if entity is None:
                 logger.error(f"resizeArrow(): Arrow '{arrowName}' does not exists.")
                 return False
@@ -315,7 +315,7 @@ class Gui:
 
         group_list = self._get_node_list_in_tree(self.groupTree, capsuleName)
         if not group_list:
-            entity = self._getEntity(capsuleName)
+            entity = self._get_entity(capsuleName)
             if entity is None:
                 logger.error(
                     f"resizeCapsule(): Capsule '{capsuleName}' does not exists."
@@ -565,7 +565,7 @@ class Gui:
                 second = second[1:]
             return first + "/" + second
 
-        entity = self._getEntity(nodeName)
+        entity = self._get_entity(nodeName)
         group_index = self._get_not_added_group(nodeName)
         if entity is None and group_index == -1:
             logger.error(f"addToGroup(): node '{nodeName}' does not exists.")
@@ -587,7 +587,7 @@ class Gui:
                 logger.info(f"addToGroup(): Creating '{new_group.name}' entity group.")
                 self._log_entity(new_group)
             elif group_index != -1 and not self._is_node_in_group(
-                self.group_list[group_index], group
+                self.groupList[group_index], group
             ):
                 new_group = self._make_group(nodeName)
                 new_group.name = format_string(group.name, new_group.name)
@@ -663,7 +663,7 @@ class Gui:
         # different blueprints to recordings that are
         # in the same application - 03/12/2024
         # Linked issue : https://github.com/rerun-io/rerun/issues/8287
-        for scene in self.sceneList:
+        for scene in self.scene_list:
             content = make_space_view_content(scene, self.groupTree)
             rr.send_blueprint(
                 rrb.Spatial3DView(contents=content),
@@ -683,12 +683,12 @@ class Gui:
                 if nodeName in self.groupList:
                     self.groupList.remove(nodeName)
             elif isinstance(group.value, Scene):
-                if group.value in self.sceneList:
-                    self.sceneList.remove(group.value)
+                if group.value in self.scene_list:
+                    self.scene_list.remove(group.value)
             elif isinstance(group.value, Entity):
                 entity = group.value
-                if entity in self.entityList[entity.type.value]:
-                    self.entityList[entity.type.value].remove(entity)
+                if entity in self.entity_list[entity.type.value]:
+                    self.entity_list[entity.type.value].remove(entity)
 
         node_list = self._get_node_list_in_tree(self.groupTree, nodeName)
         if not node_list:
