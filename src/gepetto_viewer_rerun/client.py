@@ -488,7 +488,7 @@ class Gui:
         """Get a node in self.groupTree, regardless of its type"""
         if root is None:
             return None
-        if groupName in root.name + "/":
+        if root.name.strip("/").endswith(groupName):
             return root
         for child in root.children:
             foundNode = self._getNodeInTree(child, groupName)
@@ -503,7 +503,7 @@ class Gui:
         if root is None:
             return []
         nodeList = []
-        if groupName in root.name + "/":
+        if root.name.strip("/").endswith(groupName):
             nodeList.append(root)
         for child in root.children:
             nodeList.extend(self._getNodeListInTree(child, groupName))
@@ -556,6 +556,17 @@ class Gui:
 
         return dfs(self.groupTree, target)
 
+    def _is_node_in_group(self, node: Entity | Scene | str, group: Group) -> bool:
+        """Check if node is in group.children"""
+        if isinstance(node, (Entity, Scene)):
+            for child in group.children:
+                if node is child.value:
+                    return True
+        elif isinstance(node, str):
+            for child in group.children:
+                if node in child.name:
+                    return True
+
     def addToGroup(self, nodeName: str, groupName: str) -> bool:
         """
         Actual log of an entity
@@ -588,7 +599,7 @@ class Gui:
             return False
 
         for group in groupList:
-            if entity:
+            if entity and not self._is_node_in_group(entity, group):
                 newNodeName = format_string(group.name, nodeName)
                 newGroup = Group(newNodeName, entity)
                 group.add_child(newGroup)
@@ -597,13 +608,17 @@ class Gui:
                     entity.addScene(sceneAncestor)
                 logger.info(f"addToGroup(): Creating '{newGroup.name}' entity group.")
                 self._logEntity(newGroup)
-            elif groupIndex != -1:
+            elif groupIndex != -1 and not self._is_node_in_group(
+                self.groupList[groupIndex], group
+            ):
                 newGroup = self._makeGroup(nodeName)
                 newGroup.name = format_string(group.name, newGroup.name)
                 for child in newGroup.children:
                     child.name = format_string(group.name, child.name)
                 group.add_child(newGroup)
                 logger.info(f"addToGroup(): Creating '{newGroup.name}' group.")
+            else:
+                return False
         self._draw_spacial_view_content()
         return True
 
