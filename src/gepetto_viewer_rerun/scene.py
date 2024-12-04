@@ -8,4 +8,5 @@ class Scene:
     rec: rr.RecordingStream = None
 
     def set_rec(self, rec: rr.RecordingStream):
+        """Set self.rec."""
         self.rec = rec

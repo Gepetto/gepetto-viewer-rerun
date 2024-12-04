@@ -30,7 +30,6 @@ class Gui:
                     each archetypes contain a list of `Entity` class.
                     Use `Enum Archetype` to get indices.
         """
-
         self.scene_list = []
         self.window_list = []
         self.entity_list = [[] for _ in range(len(Archetype))]
@@ -104,7 +103,7 @@ class Gui:
                 it will add the archetype to group, if the group does not exits,
                 it will create it in self.groupTree.
             - if there is no '/', archetype will require addToGroup() to be added to
-                self.groupTree
+                self.groupTree.
         """
         assert archetype is not None, "_parse_entity(): 'entity' must not be None"
         assert isinstance(
@@ -461,7 +460,7 @@ class Gui:
         )
 
     def _log_entity(self, group: Group):
-        """Draw a group entity in the Viewer"""
+        """Draw a group entity in the Viewer."""
         entity = group.value
 
         if entity.scenes is not None:
@@ -485,7 +484,7 @@ class Gui:
             return False
 
     def _get_node_in_tree(self, root: Group, group_name: str) -> Group | None:
-        """Get a node in self.groupTree, regardless of its type"""
+        """Get a node in self.groupTree, regardless of its type."""
         if root is None:
             return None
         if root.name.strip("/").endswith(group_name):
@@ -498,7 +497,7 @@ class Gui:
     def _get_node_list_in_tree(self, root: Group, group_name: str) -> List[Group]:
         """
         Get all the node in self.groupTree,
-        regardless of its type, based on its name
+        regardless of its type, based on its name.
         """
         if root is None:
             return []
@@ -510,7 +509,7 @@ class Gui:
         return node_list
 
     def _get_not_added_group(self, group_name: str) -> int:
-        """Return the index of the group_name in self.groupList"""
+        """Return the index of the group_name in self.groupList."""
         for i in range(len(self.groupList)):
             if self.groupList[i] == group_name:
                 return i
@@ -518,7 +517,7 @@ class Gui:
 
     def _get_scene_parent(self, target: Group) -> Scene | None:
         """
-        Browse tree to find the last Scene parent of the given node
+        Browse tree to find the last Scene parent of the given node.
         """
 
         def dfs(current: Group, targetNode: Group, lastScene: Group = None):
@@ -535,7 +534,7 @@ class Gui:
         return dfs(self.groupTree, target)
 
     def _is_node_in_group(self, node: Entity | Scene | str, group: Group) -> bool:
-        """Check if node is in group.children"""
+        """Check if node is in group.children."""
         if isinstance(node, (Entity, Scene)):
             for child in group.children:
                 if node is child.value:
@@ -546,18 +545,13 @@ class Gui:
                     return True
 
     def addToGroup(self, nodeName: str, groupName: str) -> bool:
-        """
-        Actual log of an entity
-        """
+        """Set a node as child to a group node."""
         assert all(
             isinstance(name, str) for name in [nodeName, groupName]
         ), "Parameters 'nodeName' and 'groupName' must be strings"
 
         def format_string(first: str, second: str) -> str:
-            """
-            Add '/' between `first` and `second`
-            """
-
+            """Add '/' between `first` and `second`."""
             return first.strip("/") + "/" + second.strip("/")
 
         entity = self._get_entity(nodeName)
@@ -578,7 +572,7 @@ class Gui:
                 group.add_child(new_group)
                 scene_ancestor = self._get_scene_parent(new_group)
                 if scene_ancestor is not None and scene_ancestor not in entity.scenes:
-                    entity.addScene(scene_ancestor)
+                    entity.add_scene(scene_ancestor)
                 logger.info(f"addToGroup(): Creating '{new_group.name}' entity group.")
                 self._log_entity(new_group)
             elif group_index != -1 and not self._is_node_in_group(
@@ -624,7 +618,7 @@ class Gui:
     def _get_node_parent_list(
         self, root: Group, node_name: str, parent: Group = None
     ) -> List[Group]:
-        """Get all the parent of the node"""
+        """Get the list of all parents of the node."""
         if root is None:
             return []
         parents = []
@@ -635,9 +629,16 @@ class Gui:
         return parents
 
     def _draw_spacial_view_content(self):
-        def make_space_view_content(scene: Scene, node: Group) -> List[str]:
-            """Make the SpaceViewContens for a given Scene"""
+        """
+        Each `Spatial3DView` has its own content,
+        after logging entity (rerun archetype or group),
+        you can choose which object you want to display/hide.
+        See [`Spatial3DView`](https://ref.rerun.io/docs/python/0.20.3/common/blueprint_views/#rerun.blueprint.views.Spatial3DView)
+        and [`SpaceViewContents`](https://ref.rerun.io/docs/python/0.20.3/common/blueprint_archetypes/#rerun.blueprint.archetypes.SpaceViewContents).
+        """
 
+        def make_space_view_content(scene: Scene, node: Group) -> List[str]:
+            """Make the SpaceViewContens for a given Scene."""
             content = []
             if node is None:
                 return content
@@ -654,7 +655,7 @@ class Gui:
                 content.extend(make_space_view_content(scene, child))
             return content
 
-        # There is a bug with rerun 0.20 :when sending
+        # There is a bug with rerun 0.20 : when sending
         # different blueprints to recordings that are
         # in the same application - 03/12/2024
         # Linked issue : https://github.com/rerun-io/rerun/issues/8287
@@ -668,7 +669,7 @@ class Gui:
     def deleteNode(self, nodeName: str, all: bool) -> bool:
         def delete_group_value(group: Group):
             """
-            Remove group value (and its children) in self.window/scene/entity/groupList
+            Remove group value (and its children) in self.window/scene/entity/groupList.
             """
             if group is None:
                 return

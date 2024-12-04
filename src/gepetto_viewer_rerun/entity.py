@@ -24,10 +24,11 @@ class Entity:
         else:
             self.scenes = [self.scenes]
 
-    def addScene(self, scene: Scene):
+    def add_scene(self, scene: Scene):
+        """Add scene to self.scenes."""
         assert isinstance(
             scene, Scene
-        ), "Entity.addScene() parameter 'scene' must be of type 'Scene'"
+        ), "Entity.add_scene() parameter 'scene' must be of type 'Scene'"
 
         self.scenes.append(scene)
 
@@ -44,6 +45,7 @@ class Group:
     children: List["Group"] = field(default_factory=list)
 
     def add_child(self, child: "Group"):
+        """Add `child` to self.children."""
         assert isinstance(
             child, Group
         ), "Group.add_child(): Parameter 'child' must of type Group"
