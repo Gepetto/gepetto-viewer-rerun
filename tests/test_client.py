@@ -7,14 +7,17 @@ class TestClient(unittest.TestCase):
     """Test cases for client class."""
 
     def test_create_window(self):
+        """Tests for createWindow()"""
         self.client = Client()
         self.assertEqual(self.client.gui.createWindow("w1"), "w1")
 
     def test_add_to_group(self):
+        """Tests for addToGroup()"""
         self.client = Client()
         self.assertFalse(self.client.gui.addToGroup("test", "s1"))
 
     def test_create_group(self):
+        """Tests for createGroup()"""
         self.client = Client()
 
         res = self.client.gui.createGroup("hello")
@@ -25,6 +28,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(self.client.gui.groupList, ["hello", "world"])
 
     def test_delete_node(self):
+        """Tests for deleteNode()"""
         self.client = Client()
 
         res = self.client.gui.deleteNode("hello", True)
