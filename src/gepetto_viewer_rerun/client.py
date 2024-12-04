@@ -555,15 +555,10 @@ class Gui:
 
         def format_string(first: str, second: str) -> str:
             """
-            Remove last '/' of `first` and first '/' of `second`.
-            Return first + '/' + second
+            Add '/' between `first` and `second`
             """
 
-            if first.endswith("/"):
-                first = first[:-1]
-            if second.startswith("/"):
-                second = second[1:]
-            return first + "/" + second
+            return first.strip("/") + "/" + second.strip("/")
 
         entity = self._get_entity(nodeName)
         group_index = self._get_not_added_group(nodeName)
