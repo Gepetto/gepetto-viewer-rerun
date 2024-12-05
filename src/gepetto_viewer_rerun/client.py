@@ -101,7 +101,7 @@ class Gui:
         return True
 
     def _parse_entity(
-        self, archetypeName: str, archetype: rr.archetypes, entityType: Archetype
+        self, archetypeName: str, archetype: rr.archetypes, archetypeType: Archetype
     ):
         """
         Parse archetype name and log (or not) archetype :
@@ -114,8 +114,8 @@ class Gui:
         """
         assert archetype is not None, "_parse_entity(): 'entity' must not be None"
         assert isinstance(
-            entityType, Archetype
-        ), "_parse_entity(): 'entityType' must be of type `enum Archetype`"
+            archetypeType, Archetype
+        ), "_parse_entity(): 'archetypeType' must be of type `enum Archetype`"
 
         char_index = archetypeName.find("/")
         # If archetypeName contains '/' then search for the scene in self.scene_list
@@ -128,7 +128,7 @@ class Gui:
                 entity = Entity(entity_name, archetype, self.scene_list[scene_index])
                 self.entity_list.append(entity)
 
-                if entityType == Archetype.MESH_FROM_PATH:
+                if archetypeType == Archetype.MESH_FROM_PATH:
                     # There is a bug with `log_file_from_path` and recordings.
                     # That's why we call `rec.to_native()`.
                     # 19/11/2024 - Issue : https://github.com/rerun-io/rerun/issues/8167
@@ -137,13 +137,14 @@ class Gui:
                         recording=self.scene_list[scene_index].rec.to_native(),
                     )
                 else:
+                    entity.add_log_name(entity_name)
                     rr.log(
                         entity_name,
                         entity.archetype,
                         recording=self.scene_list[scene_index].rec,
                     )
                 msg = (
-                    f"_parse_entity() creates a {entityType.name} for '{archetypeName}', "
+                    f"_parse_entity(): Creates entity {archetypeName} of type {archetypeType.name}, "
                     f"and logs it directly to '{self.scene_list[scene_index].name}' scene."
                 )
                 logger.info(msg)
@@ -151,11 +152,7 @@ class Gui:
         # Put entity to entity_list, wait for addToGroup() to be logged
         entity = Entity(archetypeName, archetype)
         self.entity_list.append(entity)
-        msg = (
-            f"_parse_entity() does not create a {entityType.name} for '{archetypeName}', "
-            "it will be created when added to a group with addToGroup()."
-        )
-        logger.info(msg)
+        logger.info(f"_parseEntity(): Creating entity '{archetypeName}'.")
 
     def _get_entity(self, entityName: str) -> Entity | None:
         for entity in self.entity_list:

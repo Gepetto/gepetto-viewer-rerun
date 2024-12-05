@@ -14,8 +14,8 @@ class Entity:
 
     name: str
     archetype: rr.archetypes
-    log_name: List[str] = field(default_factory=list)
     scenes: List[Scene] | None = None
+    log_name: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.scenes is None:
@@ -32,8 +32,9 @@ class Entity:
             self.scenes.append(scene)
 
     def add_log_name(self, name: str):
-        """Set log_name"""
-        self.log_name.append(name)
+        """Add log_name"""
+        if name not in self.log_name:
+            self.log_name.append(name)
 
 
 @dataclass
