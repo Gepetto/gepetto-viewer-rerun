@@ -634,20 +634,31 @@ class Gui:
         node_name: str,
         group_name: str,
     ) -> bool:
-        """Add Group to Group"""
-        new_group = Group(self._format_string(group_name, node_name))
-        for group in group_name_list:
-            for scene in group.scenes:
-                new_group.add_scene(scene)
-                # Ensure that the added group 'nodeName' has its `scenes` filled
-                for group1 in node_name_list:
-                    if group1.name == new_group.name:
-                        logger.error(
-                            f"addToGroup(): Group '{node_name}' already in group '{group_name}'."
-                        )
-                        return False
-                    group1.add_scene(scene)
-        self.group_list.append(new_group)
+        """
+        Add Group to Group.
+        If the 'group_name' is already added to other group,
+        we have to make child nodes accordingly :
+            If we have this list of node ["world", "scene/world", "hello/world"],
+            and we want to add the node "test" to "world".
+            We need to create all child nodes : "world/test", "scene/world/test", ...
+        So, we iterate over all nodes that ends with 'group_name' to creates nodes like :
+            'group_name'/'node_name'.
+        """
+        added_group_list = self._get_added_groups(group_name)
+        for added_group in added_group_list:
+            new_group = Group(self._format_string(added_group.name, node_name))
+            for group in group_name_list:
+                for scene in group.scenes:
+                    new_group.add_scene(scene)
+                    # Ensure that the added group 'nodeName' has its `scenes` filled
+                    for group1 in node_name_list:
+                        if group1.name == new_group.name:
+                            logger.error(
+                                f"addToGroup(): Group '{node_name}' already in group '{group_name}'."
+                            )
+                            return False
+                        group1.add_scene(scene)
+            self.group_list.append(new_group)
         logger.info(f"addToGroup(): Add group '{node_name}' to '{group_name}' group.")
         return True
 
