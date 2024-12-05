@@ -23,10 +23,10 @@ class Entity:
         else:
             self.scenes = [self.scenes]
 
-    def addScene(self, scene: Scene):
+    def add_scene(self, scene: Scene):
         assert isinstance(
             scene, Scene
-        ), "Entity.addScene() parameter 'scene' must be of type 'Scene'"
+        ), "Entity.add_scene() parameter 'scene' must be of type 'Scene'"
 
         if scene not in self.scenes:
             self.scenes.append(scene)

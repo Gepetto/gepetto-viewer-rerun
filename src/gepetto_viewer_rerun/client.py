@@ -544,7 +544,7 @@ class Gui:
                 f"addToGroup(): Entity '{entity.name}' already in scene '{scene.name}'."
             )
             return False
-        entity.addScene(scene)
+        entity.add_scene(scene)
         entity.add_log_name(entity.name)
         logger.info(
             f"addToGroup(): Add entity '{entity.name}' to '{scene.name}' scene."
@@ -557,7 +557,7 @@ class Gui:
         group_name_list = self._get_added_groups(groupName)
         for group in group_name_list:
             for scene in group.scenes:
-                entity.addScene(scene)
+                entity.add_scene(scene)
             log_name = self._format_string(group.name, entity.name)
             if log_name in entity.log_name:
                 logger.error(
@@ -586,7 +586,7 @@ class Gui:
             # Add scene for all children of the group
             children = self._get_group_entities_children(group_name)
             for child in children:
-                child.addScene(self.scene_list[scene_index])
+                child.add_scene(self.scene_list[scene_index])
                 self._log_entity(child)
         logger.info(f"addToGroup(): Add group '{group_name}' to '{scene.name}' scene.")
         return True
