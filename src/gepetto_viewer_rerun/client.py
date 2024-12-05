@@ -572,65 +572,84 @@ class Gui:
                     children.append(entity)
         return children
 
-    def _add_entity_to_scene(self, entity: Entity, scene_index: int):
+    def _add_entity_to_scene(self, entity: Entity, scene_index: int) -> bool:
         """Add Entity to Scene"""
         scene = self.scene_list[scene_index]
+        if scene in entity.scenes:
+            logger.error(
+                f"addToGroup(): Entity '{entity.name}' already in scene '{scene.name}'."
+            )
+            return False
         entity.addScene(scene)
         entity.add_log_name(entity.name)
         logger.info(
             f"addToGroup(): Add entity '{entity.name}' to '{scene.name}' scene."
         )
         self._log_entity(entity)
+        return True
 
-    def _add_entity_to_group(
-        self, entity: Entity, group_name_list: List[Group], groupName: str
-    ):
+    def _add_entity_to_group(self, entity: Entity, groupName: str) -> bool:
         """Add Entity to Group"""
         group_name_list = self._get_added_groups(groupName)
         for group in group_name_list:
             for scene in group.scenes:
                 entity.addScene(scene)
-
-            entity.add_log_name(self._format_string(group.name, entity.name))
+            log_name = self._format_string(group.name, entity.name)
+            if log_name in entity.log_name:
+                logger.error(
+                    f"addToGroup(): Entity '{entity.name}' already in group '{group.name}'."
+                )
+                return False
+            entity.add_log_name(log_name)
             self._log_entity(entity)
         logger.info(
             f"addToGroup(): Added entity '{entity.name}' to '{groupName}' group."
         )
+        return True
 
     def _add_group_to_scene(
         self, node_name_list: List[Group], scene_index: int, group_name: str
-    ):
+    ) -> bool:
         """Add Group to a Scene"""
         scene = self.scene_list[scene_index]
         for group in node_name_list:
+            if scene in group.scenes:
+                logger.error(
+                    f"addToGroup(): Group '{group.name}' already in scene '{scene.name}'."
+                )
+                return False
             group.add_scene(scene)
-
             # Add scene for all children of the group
             children = self._get_group_entities_children(group_name)
             for child in children:
                 child.addScene(self.scene_list[scene_index])
                 self._log_entity(child)
         logger.info(f"addToGroup(): Add group '{group_name}' to '{scene.name}' scene.")
+        return True
 
     def _add_group_to_group(
         self,
         group_name_list: List[Group],
         node_name_list: List[Group],
-        group1_name: str,
-        group2_name: str,
-    ):
+        node_name: str,
+        group_name: str,
+    ) -> bool:
         """Add Group to Group"""
-        new_group = Group(self._format_string(group2_name, group1_name))
+        new_group = Group(self._format_string(group_name, node_name))
         for group in group_name_list:
             for scene in group.scenes:
                 new_group.add_scene(scene)
                 # Ensure that the added group 'nodeName' has its `scenes` filled
                 for group1 in node_name_list:
+                    if group1.name == new_group.name:
+                        logger.error(
+                            f"addToGroup(): Group '{node_name}' already in group '{group_name}'."
+                        )
+                        return False
                     group1.add_scene(scene)
         self.group_list.append(new_group)
-        logger.info(
-            f"addToGroup(): Add group '{group1_name}' to '{group2_name}' group."
-        )
+        logger.info(f"addToGroup(): Add group '{node_name}' to '{group_name}' group.")
+        return True
 
     def addToGroup(self, nodeName: str, groupName: str) -> bool:
         """
@@ -652,25 +671,25 @@ class Gui:
         if not group_name_list and scene_index == -1:
             logger.error(f"addToGroup(): Group '{groupName}' does not exists.")
             return False
-
+        ret = True
         if entity:
             if scene_index != -1:
-                self._add_entity_to_scene(entity, scene_index)
+                ret = self._add_entity_to_scene(entity, scene_index)
             elif group_name_list:
-                self._add_entity_to_group(entity, group_name_list, groupName)
+                ret = self._add_entity_to_group(entity, groupName)
             else:
                 return False
         elif node_name_list:
             if scene_index != -1:
-                self._add_group_to_scene(node_name_list, scene_index, nodeName)
+                ret = self._add_group_to_scene(node_name_list, scene_index, nodeName)
             elif group_name_list:
-                self._add_group_to_group(
+                ret = self._add_group_to_group(
                     group_name_list, node_name_list, nodeName, groupName
                 )
             else:
                 return False
         self._draw_spacial_view_content()
-        return True
+        return ret
 
     def createGroup(self, groupName: str) -> bool:
         assert isinstance(groupName, str), "Paramter 'groupName' must be a string"
