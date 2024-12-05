@@ -7,7 +7,7 @@ import numpy as np
 import rerun as rr
 import rerun.blueprint as rrb
 
-from .entity import Entity, MeshFromPath, Group
+from .entity import Entity, Group
 from .scene import Scene
 
 logger = logging.getLogger(__name__)
@@ -477,42 +477,6 @@ class Gui:
         return next(
             (scene.rec for scene in self.scene_list if scene.name == recName), None
         )
-
-    def _log_archetype(self, entityName: str, groupName: str) -> bool:
-        entity = self._get_entity(entityName)
-        rec = self._get_recording(groupName)
-        scene_index = self._get_scene_index(groupName)
-
-        if isinstance(entity.archetype, MeshFromPath):
-            # There is a bug with `log_file_from_path` and recordings.
-            # That's why we call `rec.to_native()`.
-            # 19/11/2024 - Issue : https://github.com/rerun-io/rerun/issues/8167
-            rr.log_file_from_path(
-                file_path=entity.archetype.path, recording=rec.to_native()
-            )
-            logger.info(f"Logging Mesh from file named '{entity.name}'.")
-            return True
-        elif isinstance(entity.archetype, rr.archetypes.arrows3d.Arrows3D):
-            logger.info(f"Logging Arrows3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.boxes3d.Boxes3D):
-            logger.info(f"Logging Boxes3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.capsules3d.Capsules3D):
-            logger.info(f"Logging Capsules3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.line_strips3d.LineStrips3D):
-            logger.info(f"Logging LineStrip3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.mesh3d.Mesh3D):
-            logger.info(f"Logging Mesh3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.points3d.Points3D):
-            logger.info(f"Logging Points3D named '{entity.name}'.")
-        else:
-            return False
-        entity.addScene(self.scene_list[scene_index])
-        rr.log(
-            entity.name,
-            entity.archetype,
-            recording=rec,
-        )
-        return True
 
     def _log_entity(self, entity: Entity):
         """Draw a group entity in the Viewer."""
