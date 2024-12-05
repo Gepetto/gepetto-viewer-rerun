@@ -729,3 +729,4 @@ class Gui:
             entity.log_name.clear()
             logger.info(f"deleteNode(): Successfully removed node entity '{nodeName}'.")
         self._draw_spacial_view_content()
+        return True
