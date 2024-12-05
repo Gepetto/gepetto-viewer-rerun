@@ -5,6 +5,7 @@ from typing import List, Union
 
 import numpy as np
 import rerun as rr
+import rerun.blueprint as rrb
 
 from .entity import Entity, MeshFromPath, Group
 from .scene import Scene
@@ -42,7 +43,7 @@ class Gui:
 
         self.scene_list = []
         self.window_list = []
-        self.entity_list = [[] for _ in range(len(Archetype))]
+        self.entity_list = []
         self.group_list = []
 
     def __repr__(self):
@@ -125,7 +126,7 @@ class Gui:
             if scene_index != -1:
                 entity_name = archetypeName[char_index + 1 :]
                 entity = Entity(entity_name, archetype, self.scene_list[scene_index])
-                self.entity_list[entityType.value].append(entity)
+                self.entity_list.append(entity)
 
                 if entityType == Archetype.MESH_FROM_PATH:
                     # There is a bug with `log_file_from_path` and recordings.
@@ -149,7 +150,7 @@ class Gui:
                 return
         # Put entity to entity_list, wait for addToGroup() to be logged
         entity = Entity(archetypeName, archetype)
-        self.entity_list[entityType.value].append(entity)
+        self.entity_list.append(entity)
         msg = (
             f"_parse_entity() does not create a {entityType.name} for '{archetypeName}', "
             "it will be created when added to a group with addToGroup()."
@@ -157,10 +158,9 @@ class Gui:
         logger.info(msg)
 
     def _get_entity(self, entityName: str) -> Entity | None:
-        for entity_list in self.entity_list:
-            for entity in entity_list:
-                if entity.name == entityName:
-                    return entity
+        for entity in self.entity_list:
+            if entity.name == entityName:
+                return entity
         return None
 
     def _is_entity_in_scene(self, entity: Entity, scene: Scene) -> bool:
@@ -566,11 +566,12 @@ class Gui:
         """Draw a group entity in the Viewer."""
         if entity.scenes is not None:  # TODO: Remove None by default
             for scene in entity.scenes:
-                rr.log(
-                    entity.log_name,
-                    entity.archetype,
-                    recording=scene.rec,
-                )
+                for log_name in entity.log_name:
+                    rr.log(
+                        log_name,
+                        entity.archetype,
+                        recording=scene.rec,
+                    )
                 logger.info(
                     f"_log_entity(): Logging entity '{entity.name}' in '{scene.name}' scene."
                 )
@@ -581,7 +582,7 @@ class Gui:
         return False
 
     def _get_group_list(self, group_name: str) -> List[Group] | None:
-        """Get group inside `self.group_List`"""
+        """Get groups inside `self.group_List`"""
         group_list = []
         for group in self.group_list:
             if group.name.strip("/").endswith(group_name):
@@ -592,7 +593,7 @@ class Gui:
         """Add '/' between `first` and `second`."""
         return first.strip("/") + "/" + second.strip("/")
 
-    def _get_added_group(self, groupName: str) -> List[Group]:
+    def _get_added_groups(self, groupName: str) -> List[Group]:
         """
         Get all the nodes named 'groupName',
             return the list of nodes that are childrens of other nodes.
@@ -609,13 +610,13 @@ class Gui:
                 new_g_list.append(group)
         return new_g_list
 
-    def _get_children_entity_in_group(self, group_name: str) -> List[Entity]:
-        """Return all the children entity of a group"""
+    def _get_group_entities_children(self, group_name: str) -> List[Entity]:
+        """Return all the entities children of a group"""
 
         children = []
-        for archetype in self.entity_list:
-            for entity in archetype:
-                if group_name in entity.log_name:
+        for entity in self.entity_list:
+            for log_name in entity.log_name:
+                if group_name in log_name:
                     children.append(entity)
         return children
 
@@ -623,7 +624,7 @@ class Gui:
         """Add Entity to Scene"""
         scene = self.scene_list[scene_index]
         entity.addScene(scene)
-        entity.set_log_name(entity.name)
+        entity.add_log_name(entity.name)
         logger.info(
             f"addToGroup(): Add entity '{entity.name}' to '{scene.name}' scene."
         )
@@ -633,14 +634,16 @@ class Gui:
         self, entity: Entity, group_name_list: List[Group], groupName: str
     ):
         """Add Entity to Group"""
-        group_name_list = self._get_added_group(groupName)
+        group_name_list = self._get_added_groups(groupName)
         for group in group_name_list:
             for scene in group.scenes:
                 entity.addScene(scene)
 
-            entity.set_log_name(self._format_string(group.name, entity.name))
+            entity.add_log_name(self._format_string(group.name, entity.name))
             self._log_entity(entity)
-        logger.info(f"addToGroup(): Add entity '{entity.name}' to '{groupName}' group.")
+        logger.info(
+            f"addToGroup(): Added entity '{entity.name}' to '{groupName}' group."
+        )
 
     def _add_group_to_scene(
         self, node_name_list: List[Group], scene_index: int, group_name: str
@@ -651,7 +654,7 @@ class Gui:
             group.add_scene(scene)
 
             # Add scene for all children of the group
-            children = self._get_children_entity_in_group(group_name)
+            children = self._get_group_entities_children(group_name)
             for child in children:
                 child.addScene(self.scene_list[scene_index])
                 self._log_entity(child)
@@ -679,8 +682,8 @@ class Gui:
 
     def addToGroup(self, nodeName: str, groupName: str) -> bool:
         """
-        Actual log of an entity
-        add group1 to a group2 will create another group 'group1/group2'
+        Actual log of entities.
+        Add group1 to a group2 will create another group 'group1/group2'
         """
         assert all(
             isinstance(name, str) for name in [nodeName, groupName]
@@ -714,6 +717,7 @@ class Gui:
                 )
             else:
                 return False
+        self._draw_spacial_view_content()
         return True
 
     def createGroup(self, groupName: str) -> bool:
@@ -722,3 +726,60 @@ class Gui:
         self.group_list.append(Group(groupName))
         logger.info(f"createGroup(): create group '{groupName}'.")
         return True
+
+    def _draw_spacial_view_content(self):
+        """
+        Each `Spatial3DView` has its own content,
+        after logging entity (rerun archetype or group),
+        you can choose which object you want to display/hide.
+        See [`Spatial3DView`](https://ref.rerun.io/docs/python/0.20.3/common/blueprint_views/#rerun.blueprint.views.Spatial3DView)
+        and [`SpaceViewContents`](https://ref.rerun.io/docs/python/0.20.3/common/blueprint_archetypes/#rerun.blueprint.archetypes.SpaceViewContents).
+        """
+
+        def make_space_view_content(scene: Scene) -> List[str]:
+            """Make the SpaceViewContens for a given Scene."""
+            content = []
+            for entity in self.entity_list:
+                if scene in entity.scenes:
+                    for log_name in entity.log_name:
+                        content.append("+ " + log_name)
+            for group in self.group_list:
+                content.append("+ " + group.name)
+            return content
+
+        # There is a bug with rerun 0.20 : when sending
+        # different blueprints to recordings that are
+        # in the same application - 03/12/2024
+        # Linked issue : https://github.com/rerun-io/rerun/issues/8287
+        for scene in self.scene_list:
+            content = make_space_view_content(scene)
+            rr.send_blueprint(
+                rrb.Spatial3DView(contents=content),
+                recording=scene.rec,
+            )
+
+    def deleteNode(self, nodeName: str, all: bool) -> bool:
+        assert isinstance(nodeName, str), "Parameter 'nodeName' must be a string"
+        assert isinstance(all, bool), "Parameter 'all' must be a boolean"
+
+        groups = self._get_group_list(nodeName)
+        entity = self._get_entity(nodeName)
+        if not groups and entity is None:
+            logger.error(f"deleteNode(): Node '{nodeName}' does not exists.")
+            return False
+        for group in groups:
+            if group in self.group_list:
+                self.group_list.remove(group)
+                # Remove all chidren of group
+                children = self._get_group_entities_children(group.name)
+                for child in children:
+                    for log_name in child.log_name:
+                        if group.name in log_name:
+                            child.log_name.remove(log_name)
+                logger.info(
+                    f"deleteNode(): Successfully removed node group '{nodeName}'."
+                )
+        if entity is not None:
+            entity.log_name.clear()
+            logger.info(f"deleteNode(): Successfully removed node entity '{nodeName}'.")
+        self._draw_spacial_view_content()
