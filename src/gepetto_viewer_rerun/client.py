@@ -36,9 +36,7 @@ class Gui:
         """
         scene_list : List of `Scene` class (name and associated recording)
         window_list : List of all window names
-        entity_list : List containing every Rerun archetypes,
-                    each archetypes contain a list of `Entity` class.
-                    Use `Enum Archetype` to get indices.
+        entity_list : List containing every objects created wrapped in Entity.
         """
 
         self.scene_list = []
