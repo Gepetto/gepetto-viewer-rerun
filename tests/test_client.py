@@ -1,9 +1,7 @@
 import unittest
-from gepetto_viewer_rerun import Client
-from gepetto_viewer_rerun.entity import Group
+from gepetto_viewer_rerun import Client, Group
 
 
-# TODO: add tests for addToGroup, deleteNode
 class TestClient(unittest.TestCase):
     """Test cases for client class."""
 
