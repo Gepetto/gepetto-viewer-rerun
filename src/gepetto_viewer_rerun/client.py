@@ -110,42 +110,42 @@ class Gui:
                 every '/' will interpreted as a tree
             - if there is no '/', archetype will require addToGroup() to be logged
         """
+
+        def create_entity(entity_name) -> Entity:
+            """Create entity and add it to self.entity_list"""
+            entity = Entity(entity_name, archetype, [self.scene_list[scene_index]])
+            self.entity_list.append(entity)
+            return entity
+
         assert archetype is not None, "_parse_entity(): 'entity' must not be None"
         assert isinstance(
             archetypeType, Archetype
         ), "_parse_entity(): 'archetypeType' must be of type `enum Archetype`"
 
         char_index = archetypeName.find("/")
-        # If archetypeName contains '/' then search for the scene in self.scene_list
+        # If archetypeName contains '/' then search for the node
         if char_index != -1 and char_index != len(archetypeName) - 1:
-            scene_name = archetypeName[:char_index]
-            scene_index = self._get_scene_index(scene_name)
-
+            node_name = archetypeName[:char_index]
+            scene_index = self._get_scene_index(node_name)
             if scene_index != -1:
-                entity_name = archetypeName[char_index + 1 :]
-                entity = Entity(entity_name, archetype, self.scene_list[scene_index])
-                self.entity_list.append(entity)
-
-                if archetypeType == Archetype.MESH_FROM_PATH:
-                    # There is a bug with `log_file_from_path` and recordings.
-                    # That's why we call `rec.to_native()`.
-                    # 19/11/2024 - Issue : https://github.com/rerun-io/rerun/issues/8167
-                    rr.log_file_from_path(
-                        file_path=entity.archetype.path,
-                        recording=self.scene_list[scene_index].rec.to_native(),
-                    )
-                else:
-                    entity.add_log_name(entity_name)
-                    rr.log(
-                        entity_name,
-                        entity.archetype,
-                        recording=self.scene_list[scene_index].rec,
-                    )
-                msg = (
+                entity = create_entity(archetypeName[char_index + 1 :])
+                if archetypeType != Archetype.MESH_FROM_PATH:
+                    entity.add_log_name(entity.name)
+                logger.info(
                     f"_parse_entity(): Creates entity {archetypeName} of type {archetypeType.name}, "
-                    f"and logs it directly to '{self.scene_list[scene_index].name}' scene."
+                    f"and call to _log_entity()."
                 )
-                logger.info(msg)
+                self._log_entity(entity)
+                self._draw_spacial_view_content()
+                return
+            if self._group_exists(node_name):
+                entity = create_entity(archetypeName[char_index + 1 :])
+                logger.info(
+                    f"_parse_entity(): Creates entity {archetypeName} of type {archetypeType.name}, "
+                    f"and call to _add_entity_to_group()."
+                )
+                self._add_entity_to_group(entity, node_name)
+                self._draw_spacial_view_content()
                 return
         # Put entity to entity_list, wait for addToGroup() to be logged
         entity = Entity(archetypeName, archetype)
@@ -475,6 +475,11 @@ class Gui:
         return next(
             (scene.rec for scene in self.scene_list if scene.name == recName), None
         )
+
+    def _group_exists(self, group_name: str) -> bool:
+        for group in self.group_list:
+            if group.name == group_name:
+                return True
 
     def _log_entity(self, entity: Entity):
         """Draw a group entity in the Viewer."""
