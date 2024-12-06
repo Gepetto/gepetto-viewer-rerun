@@ -1,5 +1,6 @@
 import unittest
 from gepetto_viewer_rerun import Client
+from gepetto_viewer_rerun.entity import Group
 
 
 # TODO: add tests for addToGroup, deleteNode
@@ -25,7 +26,7 @@ class TestClient(unittest.TestCase):
 
         res = self.client.gui.createGroup("world")
         self.assertTrue(res)
-        self.assertEqual(self.client.gui.groupList, ["hello", "world"])
+        self.assertEqual(self.client.gui.group_list, [Group("hello"), Group("world")])
 
     def test_delete_node(self):
         """Tests for deleteNode()"""
@@ -35,10 +36,10 @@ class TestClient(unittest.TestCase):
         self.assertFalse(res)
 
         self.client.gui.createGroup("hello")
-        self.assertEqual(self.client.gui.groupList, ["hello"])
+        self.assertEqual(self.client.gui.group_list, [Group("hello")])
 
         self.client.gui.deleteNode("hello", True)
-        self.assertEqual(self.client.gui.groupList, [])
+        self.assertEqual(self.client.gui.group_list, [])
 
         self.client.gui.addSphere("sphere", 2, (255, 255, 0, 255))
-        self.assertFalse(self.client.gui.deleteNode("sphere", True))
+        self.assertTrue(self.client.gui.deleteNode("sphere", True))
