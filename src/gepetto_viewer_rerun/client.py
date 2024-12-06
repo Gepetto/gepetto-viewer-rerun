@@ -539,7 +539,7 @@ class Gui:
     def _add_entity_to_scene(self, entity: Entity, scene_index: int) -> bool:
         """Add Entity to Scene"""
         scene = self.scene_list[scene_index]
-        if scene in entity.scenes:
+        if scene in entity.scenes and entity.name in entity.log_name:
             logger.error(
                 f"addToGroup(): Entity '{entity.name}' already in scene '{scene.name}'."
             )
