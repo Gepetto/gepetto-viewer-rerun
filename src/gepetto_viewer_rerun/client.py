@@ -505,6 +505,8 @@ class Gui:
                         recording=scene.rec,
                     )
                 elif isinstance(entity.archetype, MeshFromPath):
+                    # entity_path_prefix does not seem to work here
+                    # 06/12/2024 - Linked isssue : https://github.com/rerun-io/rerun/issues/8344
                     rr.log_file_from_path(
                         file_path=entity.archetype.path,
                         entity_path_prefix=log_name,
@@ -718,7 +720,9 @@ class Gui:
             content = []
             for entity in self.entity_list:
                 if isinstance(entity.archetype, MeshFromPath):
-                    content.append("+ " + entity.archetype.path)
+                    if scene in entity.scenes:
+                        for log_name in entity.log_name:
+                            content.append("+ " + log_name + entity.archetype.path)
                 else:
                     if scene in entity.scenes:
                         for log_name in entity.log_name:
