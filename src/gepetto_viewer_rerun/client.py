@@ -7,7 +7,7 @@ import numpy as np
 import rerun as rr
 import rerun.blueprint as rrb
 
-from .entity import Entity, Group
+from .entity import Entity, Group, MeshFromPath
 from .scene import Scene
 
 logger = logging.getLogger(__name__)
@@ -473,6 +473,14 @@ class Gui:
         self._parse_entity(sphereName, sphere, Archetype.POINTS3D)
         return True
 
+    def addMesh(self, meshName: str, meshPath: str) -> bool:
+        assert isinstance(meshName, str), "Parameter 'meshName' must be a string"
+        assert isinstance(meshPath, str), "Parameter 'meshPath' must be a string"
+
+        mesh = MeshFromPath(meshPath)
+        self._parse_entity(meshName, mesh, Archetype.MESH_FROM_PATH)
+        return True
+
     def _get_recording(self, recName: str) -> rr.RecordingStream | None:
         return next(
             (scene.rec for scene in self.scene_list if scene.name == recName), None
@@ -487,11 +495,18 @@ class Gui:
             return False
         for scene in entity.scenes:
             for log_name in entity.log_name:
-                rr.log(
-                    log_name,
-                    entity.archetype,
-                    recording=scene.rec,
-                )
+                if type(entity.archetype) is rr.archetypes:
+                    rr.log(
+                        log_name,
+                        entity.archetype,
+                        recording=scene.rec,
+                    )
+                elif isinstance(entity.archetype, MeshFromPath):
+                    rr.log_file_from_path(
+                        file_path=entity.archetype.path,
+                        entity_path_prefix=log_name,
+                        recording=scene.rec.to_native(),
+                    )
             logger.info(
                 f"_log_entity(): Logging entity '{entity.name}' in '{scene.name}' scene."
             )
@@ -545,7 +560,10 @@ class Gui:
             )
             return False
         entity.add_scene(scene)
-        entity.add_log_name(entity.name)
+        if isinstance(entity.archetype, MeshFromPath):
+            entity.add_log_name("")
+        else:
+            entity.add_log_name(entity.name)
         logger.info(
             f"addToGroup(): Add entity '{entity.name}' to '{scene.name}' scene."
         )
@@ -553,12 +571,22 @@ class Gui:
         return True
 
     def _add_entity_to_group(self, entity: Entity, groupName: str) -> bool:
+        def format_string_for_mesh(group_name: str, mesh: MeshFromPath):
+            """Return 'group_name'/'mesh.path'"""
+            if mesh.path.startswith("/"):
+                return group_name
+            else:
+                return group_name + "/"
+
         """Add Entity to Group"""
         group_name_list = self._get_added_groups(groupName)
         for group in group_name_list:
             for scene in group.scenes:
                 entity.add_scene(scene)
-            log_name = self._format_string(group.name, entity.name)
+            if isinstance(entity.archetype, MeshFromPath):
+                log_name = format_string_for_mesh(group.name, entity.archetype)
+            else:
+                log_name = self._format_string(group.name, entity.name)
             if log_name in entity.log_name:
                 logger.error(
                     f"addToGroup(): Entity '{entity.name}' already in group '{group.name}'."
@@ -686,9 +714,12 @@ class Gui:
             """Make the SpaceViewContens for a given Scene."""
             content = []
             for entity in self.entity_list:
-                if scene in entity.scenes:
-                    for log_name in entity.log_name:
-                        content.append("+ " + log_name)
+                if isinstance(entity.archetype, MeshFromPath):
+                    content.append("+ " + entity.archetype.path)
+                else:
+                    if scene in entity.scenes:
+                        for log_name in entity.log_name:
+                            content.append("+ " + log_name)
             for group in self.group_list:
                 content.append("+ " + group.name)
             return content
