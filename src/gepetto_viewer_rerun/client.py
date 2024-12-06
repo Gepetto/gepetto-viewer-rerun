@@ -718,15 +718,20 @@ class Gui:
                 self.group_list.remove(group)
                 # Remove all chidren of group
                 children = self._get_group_entities_children(group.name)
-                for child in children:
-                    for log_name in child.log_name:
-                        if group.name in log_name:
-                            child.log_name.remove(log_name)
+                if all:
+                    for child in children:
+                        if child in self.entity_list:
+                            self.entity_list.remove(child)
+                else:
+                    for child in children:
+                        for log_name in child.log_name:
+                            if group.name in log_name:
+                                child.log_name.remove(log_name)
                 logger.info(
                     f"deleteNode(): Successfully removed node group '{nodeName}'."
                 )
         if entity is not None:
-            entity.log_name.clear()
+            self.entity_list.remove(entity)
             logger.info(f"deleteNode(): Successfully removed node entity '{nodeName}'.")
         self._draw_spacial_view_content()
         return True
