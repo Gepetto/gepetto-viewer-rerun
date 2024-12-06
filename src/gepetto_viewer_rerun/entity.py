@@ -1,6 +1,6 @@
 import rerun as rr
 from dataclasses import dataclass, field
-from typing import Union, List
+from typing import List
 import pathlib
 from .scene import Scene
 
@@ -33,7 +33,7 @@ class Entity:
 
 @dataclass
 class MeshFromPath:
-    path: Union[str, pathlib.Path]
+    path: str | pathlib.Path
 
 
 @dataclass

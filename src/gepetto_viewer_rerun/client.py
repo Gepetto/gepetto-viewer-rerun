@@ -1,7 +1,7 @@
 import logging
 from enum import Enum
 from math import tau
-from typing import List, Union, Callable
+from typing import List, Callable
 
 import numpy as np
 import rerun as rr
@@ -179,10 +179,10 @@ class Gui:
     def addBox(
         self,
         boxName: str,
-        boxSize1: List[Union[int, float]],
-        boxSize2: List[Union[int, float]],
-        boxSize3: List[Union[int, float]],
-        RGBAcolor: List[Union[int, float]],
+        boxSize1: List[int | float],
+        boxSize2: List[int | float],
+        boxSize3: List[int | float],
+        RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(boxName, str), "Parameter 'boxName' must be a string"
         assert all(
@@ -204,9 +204,9 @@ class Gui:
     def addArrow(
         self,
         name: str,
-        radius: Union[int, float],
-        length: Union[int, float],
-        RGBAcolor: List[Union[int, float]],
+        radius: int | float,
+        length: int | float,
+        RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
         assert all(
@@ -284,7 +284,7 @@ class Gui:
         return True
 
     def resizeArrow(
-        self, arrowName: str, radius: Union[int, float], length: Union[int, float]
+        self, arrowName: str, radius: int | float, length: int | float
     ) -> bool:
         assert isinstance(arrowName, str), "Parameter 'arrowName' must be a string"
         assert all(
@@ -293,9 +293,9 @@ class Gui:
 
         def create_arrow(
             arrowName: str,
-            radius: Union[int, float],
-            length: Union[int, float],
-            colors: List[Union[int, float]],
+            radius: int | float,
+            length: int | float,
+            colors: List[int | float],
         ) -> rr.archetypes.arrows3d.Arrows3D:
             angle = np.arange(start=0, stop=tau, step=tau)
             vectors = np.column_stack(
@@ -317,9 +317,9 @@ class Gui:
     def addCapsule(
         self,
         name: str,
-        radius: Union[int, float],
-        height: Union[int, float],
-        RGBAcolor: List[Union[int, float]],
+        radius: int | float,
+        height: int | float,
+        RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
         assert all(
@@ -339,7 +339,7 @@ class Gui:
         return True
 
     def resizeCapsule(
-        self, capsuleName: str, radius: Union[int, float], length: Union[int, float]
+        self, capsuleName: str, radius: int | float, length: int | float
     ) -> bool:
         assert isinstance(capsuleName, str), "Parameter 'capsuleName' must be a string"
         assert all(
@@ -348,9 +348,9 @@ class Gui:
 
         def create_capsule(
             capsuleName: str,
-            radius: Union[int, float],
-            length: Union[int, float],
-            colors: List[Union[int, float]],
+            radius: int | float,
+            length: int | float,
+            colors: List[int | float],
         ) -> rr.archetypes.capsules3d.Capsules3D:
             capsule = rr.Capsules3D(
                 radii=[radius],
@@ -368,9 +368,9 @@ class Gui:
     def addLine(
         self,
         lineName: str,
-        pos1: List[Union[int, float]],
-        pos2: List[Union[int, float]],
-        RGBAcolor: List[Union[int, float]],
+        pos1: List[int | float],
+        pos2: List[int | float],
+        RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(lineName, str), "Parameter 'lineName' must be a string"
         assert all(
@@ -395,11 +395,11 @@ class Gui:
     def addSquareFace(
         self,
         faceName: str,
-        pos1: List[Union[int, float]],
-        pos2: List[Union[int, float]],
-        pos3: List[Union[int, float]],
-        pos4: List[Union[int, float]],
-        RGBAcolor: List[Union[int, float]],
+        pos1: List[int | float],
+        pos2: List[int | float],
+        pos3: List[int | float],
+        pos4: List[int | float],
+        RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(faceName, str), "Parameter 'faceName' must be a string"
         assert all(
@@ -423,10 +423,10 @@ class Gui:
     def addTriangleFace(
         self,
         faceName: str,
-        pos1: List[Union[int, float]],
-        pos2: List[Union[int, float]],
-        pos3: List[Union[int, float]],
-        RGBAcolor: List[Union[int, float]],
+        pos1: List[int | float],
+        pos2: List[int | float],
+        pos3: List[int | float],
+        RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(faceName, str), "Parameter 'faceName' must be a string"
         assert all(
@@ -453,8 +453,8 @@ class Gui:
     def addSphere(
         self,
         sphereName: str,
-        radius: Union[int, float],
-        RGBAcolor: List[Union[int, float]],
+        radius: int | float,
+        RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(sphereName, str), "Parameter 'sphereName' must be a string"
         assert isinstance(
