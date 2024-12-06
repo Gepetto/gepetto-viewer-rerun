@@ -480,22 +480,22 @@ class Gui:
 
     def _log_entity(self, entity: Entity):
         """Draw a group entity in the Viewer."""
-        if entity.scenes is not None:  # TODO: Remove None by default
-            for scene in entity.scenes:
-                for log_name in entity.log_name:
-                    rr.log(
-                        log_name,
-                        entity.archetype,
-                        recording=scene.rec,
-                    )
-                logger.info(
-                    f"_log_entity(): Logging entity '{entity.name}' in '{scene.name}' scene."
+        if not entity.scenes:
+            logger.info(
+                f"_log_entity(): Logging entity '{entity.name}' don't have any scenes to be displayed in."
+            )
+            return False
+        for scene in entity.scenes:
+            for log_name in entity.log_name:
+                rr.log(
+                    log_name,
+                    entity.archetype,
+                    recording=scene.rec,
                 )
-            return True
-        logger.info(
-            f"_log_entity(): Logging entity '{entity.name}' don't have any scenes to be displayed in."
-        )
-        return False
+            logger.info(
+                f"_log_entity(): Logging entity '{entity.name}' in '{scene.name}' scene."
+            )
+        return True
 
     def _get_group_list(self, group_name: str) -> List[Group] | None:
         """Get groups inside `self.group_List`"""

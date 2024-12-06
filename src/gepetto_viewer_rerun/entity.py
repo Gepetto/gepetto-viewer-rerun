@@ -14,14 +14,8 @@ class Entity:
 
     name: str
     archetype: rr.archetypes
-    scenes: List[Scene] | None = None
+    scenes: List[Scene] = field(default_factory=list)
     log_name: List[str] = field(default_factory=list)
-
-    def __post_init__(self):
-        if self.scenes is None:
-            self.scenes = []
-        else:
-            self.scenes = [self.scenes]
 
     def add_scene(self, scene: Scene):
         assert isinstance(
