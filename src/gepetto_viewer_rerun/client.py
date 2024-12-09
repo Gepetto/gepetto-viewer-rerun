@@ -75,10 +75,10 @@ class Gui:
         logger.info(msg)
 
     def getWindowList(self):
-        return [window.name for window in self.windowList]
+        return [window.name for window in self.window_list]
 
     def getSceneList(self):
-        return [scene.name for scene in self.sceneList]
+        return [scene.name for scene in self.scene_list]
 
     def getWindowID(self, name: str):
         assert isinstance(name, str), "Parameter 'name' must be a string"
@@ -91,7 +91,7 @@ class Gui:
 
     def getNodeList(self):
         entitiesName = [
-            entity.name for entity_type in self.entityList for entity in entity_type
+            entity.name for entity_type in self.entity_list for entity in entity_type
         ]
         return self.getWindowList() + self.getSceneList() + entitiesName
 
@@ -100,13 +100,13 @@ class Gui:
 
         return nodeName in self.getNodeList()
 
-    def _getScene(self, sceneName: str):
-        for scene in self.sceneList:
+    def _get_scene(self, sceneName: str):
+        for scene in self.scene_list:
             if scene.name == sceneName:
                 return scene
 
-    def _getWindow(self, windowName: str):
-        for window in self.windowList:
+    def _get_window(self, windowName: str):
+        for window in self.window_list:
             if window.name == windowName:
                 return window
 
@@ -115,11 +115,11 @@ class Gui:
             isinstance(name, str) for name in [sceneName, wid]
         ), "Parameters 'sceneName' and 'wid' must be strings"
 
-        scene = self._getScene(sceneName)
+        scene = self._get_scene(sceneName)
         if scene is None:
             logger.error(f"addSceneToWindow(): Unknown sceneName '{sceneName}'.")
             return False
-        window = self._getWindow(wid)
+        window = self._get_window(wid)
         if window is None:
             logger.error(f"addSceneToWindow(): Unknown windowName '{wid}'.")
             return False
@@ -128,7 +128,7 @@ class Gui:
         else:
             window.scenes.append(scene)
         rec = rr.new_recording(application_id=wid, recording_id=sceneName, spawn=True)
-        scene.setRec(rec)
+        scene.set_rec(rec)
         return True
 
     def setBackgroundColor(self, wid: str, RGBAcolor: List[int | float]):
@@ -139,7 +139,7 @@ class Gui:
 
         import rerun.blueprint as rrb
 
-        window = self._getWindow(wid)
+        window = self._get_window(wid)
         if not window:
             logger.error(f"setBackgroundColor(): Window '{wid}' do not exists.")
             return False
@@ -180,7 +180,7 @@ class Gui:
         char_index = archetypeName.find("/")
         # If archetypeName contains '/' then search for the scene in self.scene_list
         if char_index != -1 and char_index != len(archetypeName) - 1:
-            scene = self._getScene(archetypeName[:char_index])
+            scene = self._get_scene(archetypeName[:char_index])
 
             if scene is not None:
                 entity_name = archetypeName[char_index + 1 :]
@@ -320,12 +320,11 @@ class Gui:
         # If arrowName contains '/' then search for the scene
         if char_index != -1 and char_index != len(arrowName) - 1:
             scene_name = arrowName[:char_index]
-            scene_index = self._get_scene_index(scene_name)
+            scene = self._get_scene(scene_name)
             # Check if scene exists
-            if scene_index != -1:
+            if scene is not None:
                 entity_name = arrowName[char_index + 1 :]
                 entity = self._get_entity(entity_name)
-                scene = self.scene_list[scene_index]
                 # if `entity` exists in `scene` then log it
                 if entity and self._is_entity_in_scene(entity, scene):
                     new_arrow = createArrow(
@@ -420,12 +419,11 @@ class Gui:
         # If capsuleName contains '/' then search for the scene
         if char_index != -1 and char_index != len(capsuleName) - 1:
             scene_name = capsuleName[:char_index]
-            scene_index = self._get_scene_index(scene_name)
+            scene = self._get_scene(scene_name)
             # Check if scene exists
-            if scene_index != -1:
+            if scene is not None:
                 entity_name = capsuleName[char_index + 1 :]
                 entity = self._get_entity(entity_name)
-                scene = self.scene_list[scene_index]
                 # if `entity` exists in `scene` then log it
                 if entity and self._is_entity_in_scene(entity, scene):
                     new_capsule = createCapsule(
@@ -587,7 +585,7 @@ class Gui:
 
     def _log_archetype(self, entityName: str, groupName: str) -> bool:
         entity = self._get_entity(entityName)
-        scene = self._getScene(groupName)
+        scene = self._get_scene(groupName)
 
         if isinstance(entity.archetype, MeshFromPath):
             rr.log_file_from_path(
@@ -625,7 +623,7 @@ class Gui:
             isinstance(name, str) for name in [nodeName, groupName]
         ), "Parameters 'nodeName' and 'groupName' must be strings"
 
-        if self._getScene(groupName) is None:
+        if self._get_scene(groupName) is None:
             logger.error(f"addToGroup(): Scene '{groupName}' does not exists.")
             return False
         if not self._get_entity(nodeName):

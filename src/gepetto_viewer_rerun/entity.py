@@ -13,7 +13,6 @@ class Entity:
     """
 
     name: str
-    log_name: str
     archetype: rr.archetypes
     scenes: List[Scene] | None = None
 
