@@ -1,7 +1,7 @@
 import logging
 from enum import Enum
 from math import tau
-from typing import List, Union
+from typing import List
 
 import numpy as np
 import rerun as rr
@@ -33,28 +33,28 @@ class Client:
 class Gui:
     def __init__(self):
         """
-        sceneList : List of `Scene` class (name and associated recording)
-        windowList : List of all `Window` class (name and associated scenes)
-        entityList : List containing every Rerun archetypes,
+        scene_list : List of `Scene` class (name and associated recording)
+        window_list : List of all window class
+        entity_list : List containing every Rerun archetypes,
                     each archetypes contain a list of `Entity` class.
                     Use `Enum Archetype` to get indices.
         """
 
-        self.sceneList = []
-        self.windowList = []
-        self.entityList = [[] for _ in range(len(Archetype))]
+        self.scene_list = []
+        self.window_list = []
+        self.entity_list = [[] for _ in range(len(Archetype))]
 
     def __repr__(self):
         return (
-            f"Gui(windowList={self.windowList}, "
-            f"sceneList (size: {len(self.sceneList)}) = {self.sceneList}, "
-            f"entityList (size: {len(self.entityList)}) = {self.entityList})"
+            f"Gui(window_list={self.window_list}, "
+            f"scene_list (size: {len(self.scene_list)}) = {self.scene_list}, "
+            f"entity_list (size: {len(self.entity_list)}) = {self.entity_list})"
         )
 
-    def createWindow(self, name: str):
+    def createWindow(self, name: str) -> str:
         assert isinstance(name, str), "Parameter 'name' must be a string"
 
-        self.windowList.append(Window(name))
+        self.window_list.append(Window(name))
         msg = (
             "createWindow() does not create any window, "
             "Rerun create both window and scene at the same time. "
@@ -66,7 +66,7 @@ class Gui:
     def createScene(self, sceneName: str):
         assert isinstance(sceneName, str), "Parameter 'sceneName' must be a string"
 
-        self.sceneList.append(Scene(sceneName))
+        self.scene_list.append(Scene(sceneName))
         msg = (
             "createScene() does not create any scene yet, "
             "Rerun create both window and scene at the same time. "
@@ -110,7 +110,7 @@ class Gui:
             if window.name == windowName:
                 return window
 
-    def addSceneToWindow(self, sceneName: str, wid: str):
+    def addSceneToWindow(self, sceneName: str, wid: str) -> bool:
         assert all(
             isinstance(name, str) for name in [sceneName, wid]
         ), "Parameters 'sceneName' and 'wid' must be strings"
@@ -131,7 +131,7 @@ class Gui:
         scene.setRec(rec)
         return True
 
-    def setBackgroundColor(self, wid: str, RGBAcolor: List[Union[int, float]]):
+    def setBackgroundColor(self, wid: str, RGBAcolor: List[int | float]):
         assert isinstance(wid, str), "Parameter 'wid' must be a string"
         assert isinstance(
             RGBAcolor, (list, tuple)
@@ -160,7 +160,7 @@ class Gui:
             rr.send_blueprint(blueprint, recording=scene.rec)
         return True
 
-    def _parseEntity(
+    def _parse_entity(
         self, archetypeName: str, archetype: rr.archetypes, entityType: Archetype
     ):
         """
@@ -172,56 +172,62 @@ class Gui:
                 every '/' will interpreted as a tree
             - if there is no '/', archetype will require addToGroup() to be logged
         """
-        assert archetype is not None, "_parseEntity(): 'entity' must not be None"
+        assert archetype is not None, "_parse_entity(): 'entity' must not be None"
         assert isinstance(
             entityType, Archetype
-        ), "_parseEntity(): 'entityType' must be of type `enum Archetype`"
+        ), "_parse_entity(): 'entityType' must be of type `enum Archetype`"
 
-        charIndex = archetypeName.find("/")
-        # If entityName contains '/' then search for the scene in self.sceneList
-        if charIndex != -1 and charIndex != len(archetypeName) - 1:
-            scene = self._getScene(archetypeName[:charIndex])
+        char_index = archetypeName.find("/")
+        # If archetypeName contains '/' then search for the scene in self.scene_list
+        if char_index != -1 and char_index != len(archetypeName) - 1:
+            scene = self._getScene(archetypeName[:char_index])
+
             if scene is not None:
-                entity = Entity(
-                    archetypeName, archetypeName[charIndex + 1 :], archetype
-                )
-                self.entityList[entityType.value].append(entity)
+                entity_name = archetypeName[char_index + 1 :]
+                entity = Entity(entity_name, archetype, [scene])
+                self.entity_list[entityType.value].append(entity)
 
                 if entityType == Archetype.MESH_FROM_PATH:
-                    rr.log_file_from_path(file_path=entity.archetype.path)
+                    # There is a bug with `log_file_from_path` and recordings.
+                    # That's why we call `rec.to_native()`.
+                    # 19/11/2024 - Issue : https://github.com/rerun-io/rerun/issues/8167
+                    rr.log_file_from_path(
+                        file_path=entity.archetype.path,
+                        recording=scene.rec.to_native(),
+                    )
                 else:
                     rr.log(
-                        entity.name,
+                        entity_name,
                         entity.archetype,
                         recording=scene.rec,
                     )
                 msg = (
-                    f"_parseEntity() creates a {entityType.name} for '{archetypeName}', "
+                    f"_parse_entity() creates a {entityType.name} for '{archetypeName}', "
                     f"and logs it directly to '{scene.name}' scene."
                 )
                 logger.info(msg)
                 return
-        # Put entity to entityList, wait for addToGroup() to be logged
-        entity = Entity(archetypeName, archetypeName, archetype)
-        self.entityList[entityType.value].append(entity)
+        # Put entity to entity_list, wait for addToGroup() to be logged
+        entity = Entity(archetypeName, archetype)
+        self.entity_list[entityType.value].append(entity)
         msg = (
-            f"_parseEntity() does not create a {entityType.name} for '{archetypeName}', "
+            f"_parse_entity() does not create a {entityType.name} for '{archetypeName}', "
             "it will be created when added to a group with addToGroup()."
         )
         logger.info(msg)
 
-    def _getEntity(self, entityName: str):
-        for entity_list in self.entityList:
+    def _get_entity(self, entityName: str) -> Entity | None:
+        for entity_list in self.entity_list:
             for entity in entity_list:
                 if entity.name == entityName:
                     return entity
 
-    def _isEntityInScene(self, entity: Entity, scene: Scene):
+    def _is_entity_in_scene(self, entity: Entity, scene: Scene) -> bool:
         if entity and entity.scenes:
             return scene in entity.scenes
         return False
 
-    def addFloor(self, floorName: str):
+    def addFloor(self, floorName: str) -> bool:
         assert isinstance(floorName, str), "Parameter 'floorName' must be a string"
 
         floor = rr.Boxes3D(
@@ -229,17 +235,17 @@ class Gui:
             colors=[(125, 125, 125)],
             fill_mode="Solid",
         )
-        self._parseEntity(floorName, floor, Archetype.BOXES3D)
+        self._parse_entity(floorName, floor, Archetype.BOXES3D)
         return True
 
     def addBox(
         self,
         boxName: str,
-        boxSize1: List[Union[int, float]],
-        boxSize2: List[Union[int, float]],
-        boxSize3: List[Union[int, float]],
-        RGBAcolor: List[Union[int, float]],
-    ):
+        boxSize1: List[int | float],
+        boxSize2: List[int | float],
+        boxSize3: List[int | float],
+        RGBAcolor: List[int | float],
+    ) -> bool:
         assert isinstance(boxName, str), "Parameter 'boxName' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [boxSize1, boxSize2, boxSize3]
@@ -254,16 +260,16 @@ class Gui:
             fill_mode="Solid",
             labels=[boxName],
         )
-        self._parseEntity(boxName, box, Archetype.BOXES3D)
+        self._parse_entity(boxName, box, Archetype.BOXES3D)
         return True
 
     def addArrow(
         self,
         name: str,
-        radius: Union[int, float],
-        length: Union[int, float],
-        RGBAcolor: List[Union[int, float]],
-    ):
+        radius: int | float,
+        length: int | float,
+        RGBAcolor: List[int | float],
+    ) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, length]
@@ -281,12 +287,12 @@ class Gui:
             colors=[RGBAcolor],
             labels=[name],
         )
-        self._parseEntity(name, arrow, Archetype.ARROWS3D)
+        self._parse_entity(name, arrow, Archetype.ARROWS3D)
         return True
 
     def resizeArrow(
-        self, arrowName: str, radius: Union[int, float], length: Union[int, float]
-    ):
+        self, arrowName: str, radius: int | float, length: int | float
+    ) -> bool:
         assert isinstance(arrowName, str), "Parameter 'arrowName' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, length]
@@ -294,10 +300,10 @@ class Gui:
 
         def createArrow(
             arrowName: str,
-            radius: Union[int, float],
-            length: Union[int, float],
-            colors: List[Union[int, float]],
-        ):
+            radius: int | float,
+            length: int | float,
+            colors: List[int | float],
+        ) -> rr.archetypes.arrows3d.Arrows3D:
             angle = np.arange(start=0, stop=tau, step=tau)
             vectors = np.column_stack(
                 [np.sin(angle) * length, np.zeros(1), np.cos(angle) * length]
@@ -310,47 +316,47 @@ class Gui:
             )
             return arrow
 
-        charIndex = arrowName.find("/")
+        char_index = arrowName.find("/")
         # If arrowName contains '/' then search for the scene
-        if charIndex != -1 and charIndex != len(arrowName) - 1:
-            sceneName = arrowName[:charIndex]
-            sceneIndex = self._getSceneIndex(sceneName)
+        if char_index != -1 and char_index != len(arrowName) - 1:
+            scene_name = arrowName[:char_index]
+            scene_index = self._get_scene_index(scene_name)
             # Check if scene exists
-            if sceneIndex != -1:
-                entityName = arrowName[charIndex + 1 :]
-                entity = self._getEntity(entityName)
-                scene = self.sceneList[sceneIndex]
+            if scene_index != -1:
+                entity_name = arrowName[char_index + 1 :]
+                entity = self._get_entity(entity_name)
+                scene = self.scene_list[scene_index]
                 # if `entity` exists in `scene` then log it
-                if entity and self._isEntityInScene(entity, scene):
-                    newArrow = createArrow(
+                if entity and self._is_entity_in_scene(entity, scene):
+                    new_arrow = createArrow(
                         arrowName, radius, length, entity.archetype.colors.pa_array
                     )
-                    entity.archetype = newArrow
+                    entity.archetype = new_arrow
                     rr.log(entity.name, entity.archetype, recording=scene.rec)
 
                     msg = (
                         f"resizeArrow('{arrowName}'): Logging new arrow "
-                        f"'{entityName}' in '{sceneName}' scene."
+                        f"'{entity_name}' in '{scene_name}' scene."
                     )
                     logger.info(msg)
                     return True
                 else:
                     msg = (
-                        f"resizeArrow({arrowName}): Arrow '{entityName}' "
-                        f"does not exists in '{sceneName}' scene."
+                        f"resizeArrow({arrowName}): Arrow '{entity_name}' "
+                        f"does not exists in '{scene_name}' scene."
                     )
                     logger.error(msg)
                     return False
 
-        entity = self._getEntity(arrowName)
+        entity = self._get_entity(arrowName)
         if not entity:
             logger.error(f"resizeArrow(): Arrow '{arrowName}' does not exists.")
             return False
 
-        newArrow = createArrow(
+        new_arrow = createArrow(
             arrowName, radius, length, entity.archetype.colors.pa_array
         )
-        entity.archetype = newArrow
+        entity.archetype = new_arrow
         if entity.scenes:
             for scene in entity.scenes:
                 rr.log(entity.name, entity.archetype, recording=scene.rec)
@@ -367,10 +373,10 @@ class Gui:
     def addCapsule(
         self,
         name: str,
-        radius: Union[int, float],
-        height: Union[int, float],
-        RGBAcolor: List[Union[int, float]],
-    ):
+        radius: int | float,
+        height: int | float,
+        RGBAcolor: List[int | float],
+    ) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, height]
@@ -385,12 +391,12 @@ class Gui:
             colors=[RGBAcolor],
             labels=[name],
         )
-        self._parseEntity(name, capsule, Archetype.CAPSULES3D)
+        self._parse_entity(name, capsule, Archetype.CAPSULES3D)
         return True
 
     def resizeCapsule(
-        self, capsuleName: str, radius: Union[int, float], length: Union[int, float]
-    ):
+        self, capsuleName: str, radius: int | float, length: int | float
+    ) -> bool:
         assert isinstance(capsuleName, str), "Parameter 'capsuleName' must be a string"
         assert all(
             isinstance(x, (int, float)) for x in [radius, length]
@@ -398,10 +404,10 @@ class Gui:
 
         def createCapsule(
             capsuleName: str,
-            radius: Union[int, float],
-            length: Union[int, float],
-            colors: List[Union[int, float]],
-        ):
+            radius: int | float,
+            length: int | float,
+            colors: List[int | float],
+        ) -> rr.archetypes.capsules3d.Capsules3D:
             capsule = rr.Capsules3D(
                 radii=[radius],
                 lengths=length,
@@ -410,49 +416,49 @@ class Gui:
             )
             return capsule
 
-        charIndex = capsuleName.find("/")
+        char_index = capsuleName.find("/")
         # If capsuleName contains '/' then search for the scene
-        if charIndex != -1 and charIndex != len(capsuleName) - 1:
-            sceneName = capsuleName[:charIndex]
-            sceneIndex = self._getSceneIndex(sceneName)
+        if char_index != -1 and char_index != len(capsuleName) - 1:
+            scene_name = capsuleName[:char_index]
+            scene_index = self._get_scene_index(scene_name)
             # Check if scene exists
-            if sceneIndex != -1:
-                entityName = capsuleName[charIndex + 1 :]
-                entity = self._getEntity(entityName)
-                scene = self.sceneList[sceneIndex]
+            if scene_index != -1:
+                entity_name = capsuleName[char_index + 1 :]
+                entity = self._get_entity(entity_name)
+                scene = self.scene_list[scene_index]
                 # if `entity` exists in `scene` then log it
-                if entity and self._isEntityInScene(entity, scene):
-                    newCapsule = createCapsule(
+                if entity and self._is_entity_in_scene(entity, scene):
+                    new_capsule = createCapsule(
                         capsuleName, radius, length, entity.archetype.colors.pa_array
                     )
-                    entity.archetype = newCapsule
+                    entity.archetype = new_capsule
                     rr.log(entity.name, entity.archetype, recording=scene.rec)
 
                     msg = (
                         f"resizeCapsule('{capsuleName}'): Logging new Capsules3D "
-                        f"'{entityName}' in '{sceneName}' scene."
+                        f"'{entity_name}' in '{scene_name}' scene."
                     )
                     logger.info(msg)
                     return True
                 else:
                     msg = (
-                        f"resizeCapsule({capsuleName}): Capsules3D '{entityName}' "
-                        f"does not exists in '{sceneName}' scene."
+                        f"resizeCapsule({capsuleName}): Capsules3D '{entity_name}' "
+                        f"does not exists in '{scene_name}' scene."
                     )
                     logger.error(msg)
                     return False
 
-        entity = self._getEntity(capsuleName)
+        entity = self._get_entity(capsuleName)
         if not entity:
             logger.error(
                 f"resizeCapsule(): Capsules3D '{capsuleName}' does not exists."
             )
             return False
 
-        newCapsule = createCapsule(
+        new_capsule = createCapsule(
             capsuleName, radius, length, entity.archetype.colors.pa_array
         )
-        entity.archetype = newCapsule
+        entity.archetype = new_capsule
         if entity.scenes:
             for scene in entity.scenes:
                 rr.log(entity.name, entity.archetype, recording=scene.rec)
@@ -469,10 +475,10 @@ class Gui:
     def addLine(
         self,
         lineName: str,
-        pos1: List[Union[int, float]],
-        pos2: List[Union[int, float]],
-        RGBAcolor: List[Union[int, float]],
-    ):
+        pos1: List[int | float],
+        pos2: List[int | float],
+        RGBAcolor: List[int | float],
+    ) -> bool:
         assert isinstance(lineName, str), "Parameter 'lineName' must be a string"
         assert all(
             isinstance(x, (list, tuple)) for x in [pos1, pos2]
@@ -490,18 +496,18 @@ class Gui:
             colors=[RGBAcolor],
             labels=[lineName],
         )
-        self._parseEntity(lineName, line, Archetype.LINESTRIPS3D)
+        self._parse_entity(lineName, line, Archetype.LINESTRIPS3D)
         return True
 
     def addSquareFace(
         self,
         faceName: str,
-        pos1: List[Union[int, float]],
-        pos2: List[Union[int, float]],
-        pos3: List[Union[int, float]],
-        pos4: List[Union[int, float]],
-        RGBAcolor: List[Union[int, float]],
-    ):
+        pos1: List[int | float],
+        pos2: List[int | float],
+        pos3: List[int | float],
+        pos4: List[int | float],
+        RGBAcolor: List[int | float],
+    ) -> bool:
         assert isinstance(faceName, str), "Parameter 'faceName' must be a string"
         assert all(
             isinstance(x, (list, tuple)) for x in [pos1, pos2, pos3, pos4]
@@ -518,17 +524,17 @@ class Gui:
             triangle_indices=[[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]],
             vertex_colors=[RGBAcolor],
         )
-        self._parseEntity(faceName, mesh, Archetype.MESH3D)
+        self._parse_entity(faceName, mesh, Archetype.MESH3D)
         return True
 
     def addTriangleFace(
         self,
         faceName: str,
-        pos1: List[Union[int, float]],
-        pos2: List[Union[int, float]],
-        pos3: List[Union[int, float]],
-        RGBAcolor: List[Union[int, float]],
-    ):
+        pos1: List[int | float],
+        pos2: List[int | float],
+        pos3: List[int | float],
+        RGBAcolor: List[int | float],
+    ) -> bool:
         assert isinstance(faceName, str), "Parameter 'faceName' must be a string"
         assert all(
             isinstance(x, (list, tuple)) for x in [pos1, pos2, pos3]
@@ -548,15 +554,15 @@ class Gui:
             vertex_colors=[RGBAcolor],
         )
 
-        self._parseEntity(faceName, mesh, Archetype.MESH3D)
+        self._parse_entity(faceName, mesh, Archetype.MESH3D)
         return True
 
     def addSphere(
         self,
         sphereName: str,
-        radius: Union[int, float],
-        RGBAcolor: List[Union[int, float]],
-    ):
+        radius: int | float,
+        RGBAcolor: List[int | float],
+    ) -> bool:
         assert isinstance(sphereName, str), "Parameter 'sphereName' must be a string"
         assert isinstance(
             radius, (int, float)
@@ -571,21 +577,21 @@ class Gui:
             colors=[RGBAcolor],
             labels=[sphereName],
         )
-        self._parseEntity(sphereName, sphere, Archetype.POINTS3D)
+        self._parse_entity(sphereName, sphere, Archetype.POINTS3D)
         return True
 
-    def _getRecording(self, recName: str):
+    def _get_recording(self, recName: str) -> rr.RecordingStream | None:
         return next(
-            (scene.rec for scene in self.sceneList if scene.name == recName), None
+            (scene.rec for scene in self.scene_list if scene.name == recName), None
         )
 
-    def _logArchetype(self, entityName: str, groupName: str):
-        entity = self._getEntity(entityName)
-        rec = self._getRecording(groupName)
+    def _log_archetype(self, entityName: str, groupName: str) -> bool:
+        entity = self._get_entity(entityName)
+        scene = self._getScene(groupName)
 
         if isinstance(entity.archetype, MeshFromPath):
             rr.log_file_from_path(
-                file_path=entity.archetype.path, recording=rec.to_native()
+                file_path=entity.archetype.path, recording=scene.rec.to_native()
             )
             logger.info(f"Logging Mesh from file named '{entity.name}'.")
             return True
@@ -603,14 +609,15 @@ class Gui:
             logger.info(f"Logging Points3D named '{entity.name}'.")
         else:
             return False
+        entity.addScene(scene)
         rr.log(
             entity.name,
             entity.archetype,
-            recording=rec,
+            recording=scene.rec,
         )
         return True
 
-    def addToGroup(self, nodeName: str, groupName: str):
+    def addToGroup(self, nodeName: str, groupName: str) -> bool:
         """
         Actual log of an entity
         """
@@ -621,7 +628,7 @@ class Gui:
         if self._getScene(groupName) is None:
             logger.error(f"addToGroup(): Scene '{groupName}' does not exists.")
             return False
-        if not self._getEntity(nodeName):
+        if not self._get_entity(nodeName):
             logger.error(f"addToGroup(): Entity '{nodeName}' does not exists.")
             return False
-        return self._logArchetype(nodeName, groupName)
+        return self._log_archetype(nodeName, groupName)
