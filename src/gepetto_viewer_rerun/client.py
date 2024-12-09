@@ -2,6 +2,7 @@ import logging
 from enum import Enum
 from math import tau
 from typing import List, Callable
+from pathlib import Path
 
 import numpy as np
 import rerun as rr
@@ -14,13 +15,14 @@ logger = logging.getLogger(__name__)
 
 
 class Archetype(Enum):
-    ARROWS3D = 0
-    BOXES3D = 1
-    CAPSULES3D = 2
-    LINESTRIPS3D = 3
-    MESH3D = 4
-    MESH_FROM_PATH = 5
-    POINTS3D = 6
+    ASSET3D = 0
+    ARROWS3D = 1
+    BOXES3D = 2
+    CAPSULES3D = 3
+    LINESTRIPS3D = 4
+    MESH3D = 5
+    MESH_FROM_PATH = 6
+    POINTS3D = 7
 
 
 class Client:
@@ -475,8 +477,13 @@ class Gui:
         assert isinstance(meshName, str), "Parameter 'meshName' must be a string"
         assert isinstance(meshPath, str), "Parameter 'meshPath' must be a string"
 
-        mesh = MeshFromPath(meshPath)
-        self._parse_entity(meshName, mesh, Archetype.MESH_FROM_PATH)
+        path = Path(meshPath)
+        if path.suffix == ".dae":
+            mesh = MeshFromPath(path)
+            self._parse_entity(meshName, mesh, Archetype.MESH_FROM_PATH)
+        else:
+            mesh = rr.Asset3D(path=path)
+            self._parse_entity(meshName, mesh, Archetype.ASSET3D)
         return True
 
     def _get_recording(self, recName: str) -> rr.RecordingStream | None:
@@ -499,12 +506,11 @@ class Gui:
         for scene in entity.scenes:
             for log_name in entity.log_name:
                 if isinstance(entity.archetype, MeshFromPath):
-                    # entity_path_prefix does not seem to work here
-                    # 06/12/2024 - Linked isssue : https://github.com/rerun-io/rerun/issues/8344
+                    # Here, if entity_path_prefixis specified, it's used as entity_path
                     rr.log_file_from_path(
                         file_path=entity.archetype.path,
                         entity_path_prefix=log_name,
-                        recording=scene.rec,
+                        recording=scene.rec.to_native(),
                     )
                 else:
                     rr.log(
@@ -565,10 +571,7 @@ class Gui:
             )
             return False
         entity.add_scene(scene)
-        if isinstance(entity.archetype, MeshFromPath):
-            entity.add_log_name("")
-        else:
-            entity.add_log_name(entity.name)
+        entity.add_log_name(entity.name)
         logger.info(
             f"addToGroup(): Add entity '{entity.name}' to '{scene.name}' scene."
         )
@@ -576,22 +579,12 @@ class Gui:
         return True
 
     def _add_entity_to_group(self, entity: Entity, groupName: str) -> bool:
-        def format_string_for_mesh(group_name: str, mesh: MeshFromPath):
-            """Return 'group_name'/'mesh.path'"""
-            if mesh.path.startswith("/"):
-                return group_name
-            else:
-                return group_name + "/"
-
         """Add Entity to Group"""
         group_name_list = self._get_added_groups(groupName)
         for group in group_name_list:
             for scene in group.scenes:
                 entity.add_scene(scene)
-            if isinstance(entity.archetype, MeshFromPath):
-                log_name = format_string_for_mesh(group.name, entity.archetype)
-            else:
-                log_name = self._format_string(group.name, entity.name)
+            log_name = self._format_string(group.name, entity.name)
             if log_name in entity.log_name:
                 logger.error(
                     f"addToGroup(): Entity '{entity.name}' already in group '{group.name}'."
@@ -719,14 +712,9 @@ class Gui:
             """Make the SpaceViewContens for a given Scene."""
             content = []
             for entity in self.entity_list:
-                if isinstance(entity.archetype, MeshFromPath):
-                    if scene in entity.scenes:
-                        for log_name in entity.log_name:
-                            content.append("+ " + log_name + entity.archetype.path)
-                else:
-                    if scene in entity.scenes:
-                        for log_name in entity.log_name:
-                            content.append("+ " + log_name)
+                if scene in entity.scenes:
+                    for log_name in entity.log_name:
+                        content.append("+ " + log_name)
             for group in self.group_list:
                 content.append("+ " + group.name)
             return content

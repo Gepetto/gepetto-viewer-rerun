@@ -1,7 +1,7 @@
 import rerun as rr
 from dataclasses import dataclass, field
 from typing import List
-import pathlib
+from pathlib import Path
 from .scene import Scene
 
 
@@ -33,7 +33,7 @@ class Entity:
 
 @dataclass
 class MeshFromPath:
-    path: str | pathlib.Path
+    path: str | Path
 
 
 @dataclass
