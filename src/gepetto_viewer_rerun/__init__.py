@@ -1,3 +1,3 @@
-from .client import Client
+from .client import Client, Group
 
-__all__ = [Client]
+__all__ = [Client, Group]
