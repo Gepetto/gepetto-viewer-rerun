@@ -492,25 +492,25 @@ class Gui:
     def _log_entity(self, entity: Entity):
         """Draw a group entity in the Viewer."""
         if not entity.scenes:
-            logger.info(
+            logger.error(
                 f"_log_entity(): Logging entity '{entity.name}' don't have any scenes to be displayed in."
             )
             return False
         for scene in entity.scenes:
             for log_name in entity.log_name:
-                if type(entity.archetype) is rr.archetypes:
-                    rr.log(
-                        log_name,
-                        entity.archetype,
-                        recording=scene.rec,
-                    )
-                elif isinstance(entity.archetype, MeshFromPath):
+                if isinstance(entity.archetype, MeshFromPath):
                     # entity_path_prefix does not seem to work here
                     # 06/12/2024 - Linked isssue : https://github.com/rerun-io/rerun/issues/8344
                     rr.log_file_from_path(
                         file_path=entity.archetype.path,
                         entity_path_prefix=log_name,
-                        recording=scene.rec.to_native(),
+                        recording=scene.rec,
+                    )
+                else:
+                    rr.log(
+                        log_name,
+                        entity.archetype,
+                        recording=scene.rec,
                     )
             logger.info(
                 f"_log_entity(): Logging entity '{entity.name}' in '{scene.name}' scene."
