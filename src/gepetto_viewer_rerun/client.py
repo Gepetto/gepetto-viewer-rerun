@@ -500,7 +500,7 @@ class Gui:
             )
         return True
 
-    def _get_group_list(self, group_name: str) -> List[Group] | None:
+    def _get_group_list(self, group_name: str) -> List[Group]:
         """Get groups inside `self.group_List`"""
         group_list = []
         for group in self.group_list:
