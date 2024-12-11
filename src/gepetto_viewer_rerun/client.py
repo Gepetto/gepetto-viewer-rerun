@@ -153,6 +153,7 @@ class Gui:
         logger.info(f"_parseEntity(): Creating entity '{archetypeName}'.")
 
     def _get_entity(self, entityName: str) -> Entity | None:
+        """Get entity in self.entity_list"""
         for entity in self.entity_list:
             if entity.name == entityName:
                 return entity
@@ -166,6 +167,10 @@ class Gui:
     def addFloor(self, floorName: str) -> bool:
         assert isinstance(floorName, str), "Parameter 'floorName' must be a string"
 
+        entity = self._get_entity(floorName)
+        if entity is not None:
+            logger.error(f"addFloor(): An entity named '{floorName}' already exists.")
+            return False
         floor = rr.Boxes3D(
             sizes=[[200, 200, 0.5]],
             colors=[(125, 125, 125)],
@@ -190,6 +195,10 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(boxName)
+        if entity is not None:
+            logger.error(f"addBox(): An entity named '{boxName}' already exists.")
+            return False
         box = rr.Boxes3D(
             sizes=[[boxSize1, boxSize2, boxSize3]],
             colors=[RGBAcolor],
@@ -214,6 +223,10 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(name)
+        if entity is not None:
+            logger.error(f"addArrow(): An entity named '{name}' already exists.")
+            return False
         angle = np.arange(start=0, stop=tau, step=tau)
         arrow = rr.Arrows3D(
             radii=[[radius]],
@@ -327,6 +340,10 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(name)
+        if entity is not None:
+            logger.error(f"addCapsule(): An entity named '{name}' already exists.")
+            return False
         capsule = rr.Capsules3D(
             lengths=[height],
             radii=[radius],
@@ -381,6 +398,10 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(lineName)
+        if entity is not None:
+            logger.error(f"addLine(): An entity named '{lineName}' already exists.")
+            return False
         line = rr.LineStrips3D(
             [[pos1, pos2]],
             radii=[0.1],
@@ -410,6 +431,12 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(faceName)
+        if entity is not None:
+            logger.error(
+                f"addSquareFace(): An entity named '{faceName}' already exists."
+            )
+            return False
         mesh = rr.Mesh3D(
             vertex_positions=[pos1, pos2, pos3, pos4],
             triangle_indices=[[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]],
@@ -440,11 +467,16 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(faceName)
+        if entity is not None:
+            logger.error(
+                f"addTriangleFace(): An entity named '{faceName}' already exists."
+            )
+            return False
         mesh = rr.Mesh3D(
             vertex_positions=[pos1, pos2, pos3],
             vertex_colors=[RGBAcolor],
         )
-
         self._parse_entity(faceName, mesh, Archetype.MESH3D)
         return True
 
@@ -462,6 +494,10 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(sphereName)
+        if entity is not None:
+            logger.error(f"addSphere(): An entity named '{sphereName}' already exists.")
+            return False
         sphere = rr.Points3D(
             positions=[[0.0, 0.0, 0.0]],
             radii=[[radius]],
@@ -672,6 +708,10 @@ class Gui:
     def createGroup(self, groupName: str) -> bool:
         assert isinstance(groupName, str), "Paramter 'groupName' must be a string"
 
+        groups = self._get_group_list(groupName)
+        if groups:
+            logger.error(f"createGroup(): Group '{groupName}' already exists.")
+            return False
         self.group_list.append(Group(groupName))
         logger.info(f"createGroup(): create group '{groupName}'.")
         return True
