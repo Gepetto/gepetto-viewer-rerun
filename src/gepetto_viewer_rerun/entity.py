@@ -33,6 +33,15 @@ class Entity:
 
 @dataclass
 class MeshFromPath:
+    """
+    Meshes in Gepetto Viewer are not what Rerun Mesh3D are.
+    Meshes in Gepetto Viewer are files containing data.
+    Meshes in Rerun are an archetype that takes data as arguments to be build.
+
+    MeshFromPath is only used when calling addMesh() on collada files.
+    When addMesh() is called on stl/obj files, we will use Asset3D archetype
+    """
+
     path: str | Path
 
 
