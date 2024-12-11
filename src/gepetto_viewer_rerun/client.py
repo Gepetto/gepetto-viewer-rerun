@@ -36,7 +36,8 @@ class Gui:
         """
         scene_list : List of `Scene` class (name and associated recording)
         window_list : List of all window names
-        entity_list : List containing every objects created wrapped in Entity.
+        entity_list : List containing every Rerun objects created wrapped in Entity
+        group_list: List of every created Group
         """
 
         self.scene_list = []
