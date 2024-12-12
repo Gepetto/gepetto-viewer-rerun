@@ -706,24 +706,24 @@ class Gui:
         self._log_entity(curve)
         return True
 
-        def setCurvePoints(self, name: str, pos: List[List[int | float]]) -> bool:
-            assert isinstance(name, str), "Parameter 'curveName' must be a string"
-            assert isinstance(
-                pos, (int, float)
-            ), "Parameter 'pos' must be a list of positions"
+    def setCurvePoints(self, name: str, pos: List[List[int | float]]) -> bool:
+        assert isinstance(name, str), "Parameter 'curveName' must be a string"
+        assert isinstance(
+            pos, (int, float)
+        ), "Parameter 'pos' must be a list of positions"
 
-            curve = self._get_entity(name)
-            if curve is None:
-                logger.error(f"setCurvePoints(): Curve '{name}' does not exists.")
-                return False
-            if not isinstance(curve.archetype, rr.LineStrips3D):
-                logger.error(
-                    f"setCurvePoints(): Entity '{name}' exists but is not a Curve."
-                )
-                return False
-            curve.strips = pos
-            self._log_entity(curve)
-            return True
+        curve = self._get_entity(name)
+        if curve is None:
+            logger.error(f"setCurvePoints(): Curve '{name}' does not exists.")
+            return False
+        if not isinstance(curve.archetype, rr.LineStrips3D):
+            logger.error(
+                f"setCurvePoints(): Entity '{name}' exists but is not a Curve."
+            )
+            return False
+        curve.strips = pos
+        self._log_entity(curve)
+        return True
 
     def addMesh(self, meshName: str, meshPath: str) -> bool:
         assert isinstance(meshName, str), "Parameter 'meshName' must be a string"
