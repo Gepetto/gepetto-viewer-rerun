@@ -19,6 +19,7 @@ class Entity:
     archetype: rr.archetypes
     scenes: List[Scene] = field(default_factory=list)
     log_name: List[str] = field(default_factory=list)
+    configuration: List[int | float] = field(default_factory=list)
 
     def add_scene(self, scene: Scene):
         assert isinstance(

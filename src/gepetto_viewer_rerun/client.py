@@ -592,6 +592,16 @@ class Gui:
             return False
         for scene in entity.scenes:
             for log_name in entity.log_name:
+                if entity.configuration:
+                    transform = rr.Transform3D(
+                        translation=entity.configuration[:3],
+                        quaternion=entity.configuration[3:],
+                    )
+                    rr.log(
+                        log_name,
+                        transform,
+                        recording=scene.rec,
+                    )
                 if isinstance(entity.archetype, MeshFromPath):
                     # Here, if entity_path_prefixis specified, it's used as entity_path
                     rr.log_file_from_path(
@@ -606,7 +616,8 @@ class Gui:
                         recording=scene.rec,
                     )
             logger.info(
-                f"_log_entity(): Logging entity '{entity.name}' in '{scene.name}' scene."
+                f"_log_entity(): Logging entity '{entity.name}' in'{scene.name}' "
+                f"scene. Configuration applied : {entity.configuration}."
             )
         return True
 
@@ -849,4 +860,57 @@ class Gui:
             self.entity_list.remove(entity)
             logger.info(f"deleteNode(): Successfully removed node entity '{nodeName}'.")
         self._draw_spacial_view_content()
+        return True
+
+    def applyConfiguration(
+        self, nodeName: str, configuration: List[int | float]
+    ) -> bool:
+        assert isinstance(nodeName, str), "Parameter 'nodeName' must be a string"
+        assert isinstance(
+            configuration, (list, tuple)
+        ), "Parameter 'configuration' must be a list or tuple of number"
+        assert (
+            len(configuration) == 7
+        ), "Parameter 'configuration' must be a list of length 7"
+
+        entity = self._get_entity(nodeName)
+        if entity is None:
+            logger.error(f"applyConfiguration(): Node '{nodeName}' does not exists.")
+            return False
+        entity.configuration = configuration
+        logger.info(
+            f"applyConfiguration(): Successfully set configuration : "
+            f"{configuration}, on '{nodeName}' node."
+        )
+        self._log_entity(entity)
+        return True
+
+    def applyConfigurations(
+        self, nodeName: List[str], configurations: List[List[int | float]]
+    ) -> bool:
+        assert isinstance(
+            nodeName, (list, tuple)
+        ), "Parameter 'nodeName' must be a list of strings"
+        assert isinstance(
+            configurations, (list, tuple)
+        ), "Parameter 'configurations' must be a list or tuple of number"
+        assert len(nodeName) == len(
+            configurations
+        ), "Parameter nodeName and configurations must be the same size"
+
+        for node_name, config in zip(nodeName, configurations):
+            assert len(config) == 7, "Configurations must be list of length 7"
+
+            entity = self._get_entity(node_name)
+            if entity is None:
+                logger.error(
+                    f"applyConfigurations(): Node '{node_name}' does not exists."
+                )
+                return False
+            entity.configuration = config
+            logger.info(
+                f"applyConfiguration(): Successfully set configuration : "
+                f"{config}, on '{nodeName}' node."
+            )
+            self._log_entity(entity)
         return True
