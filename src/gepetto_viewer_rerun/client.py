@@ -80,15 +80,6 @@ class Gui:
     def getSceneList(self):
         return [scene.name for scene in self.scene_list]
 
-    def getWindowID(self, name: str):
-        assert isinstance(name, str), "Parameter 'name' must be a string"
-
-        if name not in self.getWindowList():
-            logging.error(f"getWindowID(): Unknown windowName '{name}'.")
-            return ""
-        logger.info("getWindowID() only checks if window exists and return its name.")
-        return name
-
     def getNodeList(self):
         entitiesName = [
             entity.name for entity_type in self.entity_list for entity in entity_type
