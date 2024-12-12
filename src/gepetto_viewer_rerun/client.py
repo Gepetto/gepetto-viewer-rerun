@@ -2,25 +2,27 @@ import logging
 from enum import Enum
 from math import tau
 from typing import List, Callable
+from pathlib import Path
 
 import numpy as np
 import rerun as rr
 import rerun.blueprint as rrb
 
-from .entity import Entity, Group
+from .entity import Entity, Group, MeshFromPath
 from .scene import Scene, Window
 
 logger = logging.getLogger(__name__)
 
 
 class Archetype(Enum):
-    ARROWS3D = 0
-    BOXES3D = 1
-    CAPSULES3D = 2
-    LINESTRIPS3D = 3
-    MESH3D = 4
-    MESH_FROM_PATH = 5
-    POINTS3D = 6
+    ASSET3D = 0
+    ARROWS3D = 1
+    BOXES3D = 2
+    CAPSULES3D = 3
+    LINESTRIPS3D = 4
+    MESH3D = 5
+    MESH_FROM_PATH = 6
+    POINTS3D = 7
 
 
 class Client:
@@ -558,6 +560,19 @@ class Gui:
         self._parse_entity(sphereName, sphere, Archetype.POINTS3D)
         return True
 
+    def addMesh(self, meshName: str, meshPath: str) -> bool:
+        assert isinstance(meshName, str), "Parameter 'meshName' must be a string"
+        assert isinstance(meshPath, str), "Parameter 'meshPath' must be a string"
+
+        path = Path(meshPath)
+        if path.suffix == ".dae":
+            mesh = MeshFromPath(path)
+            self._parse_entity(meshName, mesh, Archetype.MESH_FROM_PATH)
+        else:
+            mesh = rr.Asset3D(path=path)
+            self._parse_entity(meshName, mesh, Archetype.ASSET3D)
+        return True
+
     def _get_recording(self, recName: str) -> rr.RecordingStream | None:
         return next(
             (scene.rec for scene in self.scene_list if scene.name == recName), None
@@ -571,17 +586,25 @@ class Gui:
     def _log_entity(self, entity: Entity):
         """Draw a group entity in the Viewer."""
         if not entity.scenes:
-            logger.info(
+            logger.error(
                 f"_log_entity(): Logging entity '{entity.name}' don't have any scenes to be displayed in."
             )
             return False
         for scene in entity.scenes:
             for log_name in entity.log_name:
-                rr.log(
-                    log_name,
-                    entity.archetype,
-                    recording=scene.rec,
-                )
+                if isinstance(entity.archetype, MeshFromPath):
+                    # Here, if entity_path_prefixis specified, it's used as entity_path
+                    rr.log_file_from_path(
+                        file_path=entity.archetype.path,
+                        entity_path_prefix=log_name,
+                        recording=scene.rec.to_native(),
+                    )
+                else:
+                    rr.log(
+                        log_name,
+                        entity.archetype,
+                        recording=scene.rec,
+                    )
             logger.info(
                 f"_log_entity(): Logging entity '{entity.name}' in '{scene.name}' scene."
             )
