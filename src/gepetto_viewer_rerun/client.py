@@ -464,6 +464,84 @@ class Gui:
         self._parse_entity(lineName, line, Archetype.LINESTRIPS3D)
         return True
 
+    def setLineStartPoint(self, lineName: str, pos1: List[int | float]) -> bool:
+        assert isinstance(lineName, str), "Parameter 'lineName' must be a string"
+        assert isinstance(
+            pos1, (list, tuple)
+        ), "Parameters 'pos1' must be a list or tuple of numbers"
+
+        line = self._get_entity(lineName)
+        if line is None:
+            logger.error(f"setLineStartPoint(): Line '{lineName}' does not exists.")
+            return False
+        if not isinstance(line.archetype, rr.LineStrips3D):
+            logger.error(
+                f"setLineStartPoint(): Entity '{lineName}' exists but is not a Line."
+            )
+            return False
+        new_points = line.archetype.strips.pa_array.to_pylist()
+        if len(new_points) >= 1:
+            if len(new_points[0]) >= 1:
+                new_points[0][0] = pos1
+                line.archetype.strips = new_points
+                return True
+        logger.error(
+            f"setLineStartPoint(): Size of 'strips' of line '{lineName}' is invalid."
+        )
+
+    def setLineEndPoint(self, lineName: str, pos2: List[int | float]) -> bool:
+        assert isinstance(lineName, str), "Parameter 'lineName' must be a string"
+        assert isinstance(
+            pos2, (list, tuple)
+        ), "Parameters 'pos1' must be a list or tuple of numbers"
+
+        line = self._get_entity(lineName)
+        if line is None:
+            logger.error(f"setLineEndPoint(): Line '{lineName}' does not exists.")
+            return False
+        if not isinstance(line.archetype, rr.LineStrips3D):
+            logger.error(
+                f"setLineEndPoint(): Entity '{lineName}' exists but is not a Line."
+            )
+            return False
+        new_points = line.archetype.strips.pa_array.to_pylist()
+        if len(new_points) >= 1:
+            if len(new_points[0]) >= 1:
+                new_points[0][-1] = pos2
+                line.archetype.strips = new_points
+                return True
+        logger.error(
+            f"setLineEndPoint(): Size of 'strips' of line '{lineName}' is invalid."
+        )
+
+    def setLineExtremalPoints(
+        self, lineName: str, pos1: List[int | float], pos2: List[int | float]
+    ) -> bool:
+        assert isinstance(lineName, str), "Parameter 'lineName' must be a string"
+        assert isinstance(
+            (pos1, pos2), (list, tuple)
+        ), "Parameters 'pos' must be a list or tuple of numbers"
+
+        line = self._get_entity(lineName)
+        if line is None:
+            logger.error(f"setLineExtremalPoints(): Line '{lineName}' does not exists.")
+            return False
+        if not isinstance(line.archetype, rr.LineStrips3D):
+            logger.error(
+                f"setLineExtremalPoints(): Entity '{lineName}' exists but is not a Line."
+            )
+            return False
+        new_points = line.archetype.strips.pa_array.to_pylist()
+        if len(new_points) >= 1:
+            if len(new_points[0]) >= 1:
+                new_points[0][0] = pos1
+                new_points[0][-1] = pos2
+                line.archetype.strips = new_points
+                return True
+        logger.error(
+            f"setLineExtremalPoints(): Size of 'strips' of line '{lineName}' is invalid."
+        )
+
     def addSquareFace(
         self,
         faceName: str,
@@ -558,6 +636,91 @@ class Gui:
             labels=[sphereName],
         )
         self._parse_entity(sphereName, sphere, Archetype.POINTS3D)
+        return True
+
+    def addCurve(
+        self, name: str, pos: List[List[int | float]], RGBAcolor: List[int | float]
+    ) -> bool:
+        assert isinstance(name, str), "Parameter 'name' must be a string"
+        assert isinstance(
+            pos, (list, tuple)
+        ), "Parameters 'pos' must be a list or tuple of numbers"
+        assert all(
+            isinstance(pos, (list, tuple)) for pos in pos
+        ), "Parameters 'pos' must be a list or tuple of numbers"
+        assert all(
+            isinstance(nb, (int, float)) for list in pos for nb in list
+        ), "Parameters 'pos1' and 'pos2' must be a list or tuple of numbers"
+        assert isinstance(
+            RGBAcolor, (list, tuple)
+        ), "Parameter 'RGBAcolor' must be a list or tuple"
+
+        entity = self._get_entity(name)
+        if entity is not None:
+            logger.error(f"addCurve(): An entity named '{name}' already exists.")
+            return False
+        curve = rr.LineStrips3D(
+            [pos],
+            radii=[0.1],
+            colors=[RGBAcolor],
+            labels=[name],
+        )
+        self._parse_entity(name, curve, Archetype.LINESTRIPS3D)
+        return True
+
+    def setCurveColors(self, name: str, color: List[int | float]) -> bool:
+        assert isinstance(name, str), "Parameter 'name' must be a string"
+        assert isinstance(
+            color, (list, tuple)
+        ), "Parameter 'RGBAcolor' must be a list or tuple"
+
+        entity = self._get_entity(name)
+        if entity is None:
+            logger.error(f"setCurveColors(): Curve '{name}' does not exists.")
+            return False
+        if not isinstance(entity.archetype, rr.LineStrips3D):
+            logger.error(
+                f"setCurveColors(): Entity '{name}' exists but is not a Curve."
+            )
+            return False
+        entity.archetype.colors = color
+        self._log_entity(entity)
+        return True
+
+    def setCurveLineWidth(self, curveName: str, width: int | float) -> bool:
+        assert isinstance(curveName, str), "Parameter 'curveName' must be a string"
+        assert isinstance(width, (int, float)), "Parameter 'width' must be a number"
+
+        entity = self._get_entity(curveName)
+        if entity is None:
+            logger.error(f"setCurveLineWidth(): Curve '{curveName}' does not exists.")
+            return False
+        if not isinstance(entity.archetype, rr.LineStrips3D):
+            logger.error(
+                f"setCurveLineWidth(): Entity '{curveName}' exists but is not a Curve."
+            )
+            return False
+        entity.archetype.radii = width
+        self._log_entity(entity)
+        return True
+
+    def setCurvePoints(self, name: str, pos: List[List[int | float]]) -> bool:
+        assert isinstance(name, str), "Parameter 'curveName' must be a string"
+        assert isinstance(
+            pos, (list, tuple)
+        ), "Parameter 'pos' must be a list of positions"
+
+        entity = self._get_entity(name)
+        if entity is None:
+            logger.error(f"setCurvePoints(): Curve '{name}' does not exists.")
+            return False
+        if not isinstance(entity.archetype, rr.LineStrips3D):
+            logger.error(
+                f"setCurvePoints(): Entity '{name}' exists but is not a Curve."
+            )
+            return False
+        entity.archetype.strips = pos
+        self._log_entity(entity)
         return True
 
     def addMesh(self, meshName: str, meshPath: str) -> bool:
