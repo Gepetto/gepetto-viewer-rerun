@@ -8,8 +8,11 @@ from .scene import Scene
 @dataclass
 class Entity:
     """
-    Each entity is defined by its name, the archetype and
-        the list of the scenes in which it is drawn.
+    Each entity is defined by its name and log_name, the archetype
+        and the list of the scenes in which it is drawn.
+
+    The list of log_name makes the node hierarchy, so that when logging
+    the entity, Rerun makes the intermediate group nodes.
     """
 
     name: str
