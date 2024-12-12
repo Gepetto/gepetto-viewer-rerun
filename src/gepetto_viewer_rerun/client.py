@@ -1,12 +1,13 @@
 import logging
 from enum import Enum
 from math import tau
-from typing import List
+from typing import List, Callable
 
 import numpy as np
 import rerun as rr
+import rerun.blueprint as rrb
 
-from .entity import Entity, MeshFromPath
+from .entity import Entity, Group
 from .scene import Scene, Window
 
 logger = logging.getLogger(__name__)
@@ -35,20 +36,21 @@ class Gui:
         """
         scene_list : List of `Scene` class (name and associated recording)
         window_list : List of all window class
-        entity_list : List containing every Rerun archetypes,
-                    each archetypes contain a list of `Entity` class.
-                    Use `Enum Archetype` to get indices.
+        entity_list : List containing every Rerun objects created wrapped in Entity
+        group_list: List of every created Group
         """
 
         self.scene_list = []
         self.window_list = []
-        self.entity_list = [[] for _ in range(len(Archetype))]
+        self.entity_list = []
+        self.group_list = []
 
     def __repr__(self):
         return (
-            f"Gui(window_list={self.window_list}, "
-            f"scene_list (size: {len(self.scene_list)}) = {self.scene_list}, "
-            f"entity_list (size: {len(self.entity_list)}) = {self.entity_list})"
+            f"Gui(window_list={self.window_list}\n"
+            f"scene_list (size: {len(self.scene_list)}) = {self.scene_list}\n"
+            f"entity_list (size: {len(self.entity_list)}) = {self.entity_list})\n"
+            f"group_list (size: {len(self.group_list)}) = {self.group_list})"
         )
 
     def createWindow(self, name: str) -> str:
@@ -81,9 +83,7 @@ class Gui:
         return [scene.name for scene in self.scene_list]
 
     def getNodeList(self):
-        entitiesName = [
-            entity.name for entity_type in self.entity_list for entity in entity_type
-        ]
+        entitiesName = [entity.name for entity in self.entity_list]
         return self.getWindowList() + self.getSceneList() + entitiesName
 
     def nodeExists(self, nodeName: str):
@@ -152,7 +152,7 @@ class Gui:
         return True
 
     def _parse_entity(
-        self, archetypeName: str, archetype: rr.archetypes, entityType: Archetype
+        self, archetypeName: str, archetype: rr.archetypes, archetypeType: Archetype
     ):
         """
         Parse archetype name and log (or not) archetype :
@@ -163,55 +163,53 @@ class Gui:
                 every '/' will interpreted as a tree
             - if there is no '/', archetype will require addToGroup() to be logged
         """
+
+        def create_entity(entity_name) -> Entity:
+            """Create entity and add it to self.entity_list"""
+            entity = Entity(entity_name, archetype, [scene])
+            self.entity_list.append(entity)
+            return entity
+
         assert archetype is not None, "_parse_entity(): 'entity' must not be None"
         assert isinstance(
-            entityType, Archetype
-        ), "_parse_entity(): 'entityType' must be of type `enum Archetype`"
+            archetypeType, Archetype
+        ), "_parse_entity(): 'archetypeType' must be of type `enum Archetype`"
 
         char_index = archetypeName.find("/")
-        # If archetypeName contains '/' then search for the scene in self.scene_list
+        # If archetypeName contains '/' then search for the node
         if char_index != -1 and char_index != len(archetypeName) - 1:
-            scene = self._get_scene(archetypeName[:char_index])
-
+            node_name = archetypeName[:char_index]
+            scene = self._get_scene(node_name)
             if scene is not None:
-                entity_name = archetypeName[char_index + 1 :]
-                entity = Entity(entity_name, archetype, [scene])
-                self.entity_list[entityType.value].append(entity)
-
-                if entityType == Archetype.MESH_FROM_PATH:
-                    # There is a bug with `log_file_from_path` and recordings.
-                    # That's why we call `rec.to_native()`.
-                    # 19/11/2024 - Issue : https://github.com/rerun-io/rerun/issues/8167
-                    rr.log_file_from_path(
-                        file_path=entity.archetype.path,
-                        recording=scene.rec.to_native(),
-                    )
-                else:
-                    rr.log(
-                        entity_name,
-                        entity.archetype,
-                        recording=scene.rec,
-                    )
-                msg = (
-                    f"_parse_entity() creates a {entityType.name} for '{archetypeName}', "
-                    f"and logs it directly to '{scene.name}' scene."
+                entity = create_entity(archetypeName[char_index + 1 :])
+                if archetypeType != Archetype.MESH_FROM_PATH:
+                    entity.add_log_name(entity.name)
+                logger.info(
+                    f"_parse_entity(): Creates entity {archetypeName} of type {archetypeType.name}, "
+                    f"and call to _log_entity()."
                 )
-                logger.info(msg)
+                self._log_entity(entity)
+                self._draw_spacial_view_content()
+                return
+            if self._group_exists(node_name):
+                entity = create_entity(archetypeName[char_index + 1 :])
+                logger.info(
+                    f"_parse_entity(): Creates entity {archetypeName} of type {archetypeType.name}, "
+                    f"and call to _add_entity_to_group()."
+                )
+                self._add_entity_to_group(entity, node_name)
+                self._draw_spacial_view_content()
                 return
         # Put entity to entity_list, wait for addToGroup() to be logged
         entity = Entity(archetypeName, archetype)
-        self.entity_list[entityType.value].append(entity)
-        msg = (
-            f"_parse_entity() does not create a {entityType.name} for '{archetypeName}', "
-            "it will be created when added to a group with addToGroup()."
-        )
-        logger.info(msg)
+        self.entity_list.append(entity)
+        logger.info(f"_parseEntity(): Creating entity '{archetypeName}'.")
 
     def _get_entity(self, entityName: str) -> Entity | None:
-        for entity_list in self.entity_list:
-            for entity in entity_list:
-                if entity.name == entityName:
-                    return entity
+        """Get entity in self.entity_list"""
+        for entity in self.entity_list:
+            if entity.name == entityName:
+                return entity
 
     def _is_entity_in_scene(self, entity: Entity, scene: Scene) -> bool:
         if entity and entity.scenes:
@@ -221,6 +219,10 @@ class Gui:
     def addFloor(self, floorName: str) -> bool:
         assert isinstance(floorName, str), "Parameter 'floorName' must be a string"
 
+        entity = self._get_entity(floorName)
+        if entity is not None:
+            logger.error(f"addFloor(): An entity named '{floorName}' already exists.")
+            return False
         floor = rr.Boxes3D(
             sizes=[[200, 200, 0.5]],
             colors=[(125, 125, 125)],
@@ -245,6 +247,10 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(boxName)
+        if entity is not None:
+            logger.error(f"addBox(): An entity named '{boxName}' already exists.")
+            return False
         box = rr.Boxes3D(
             sizes=[[boxSize1, boxSize2, boxSize3]],
             colors=[RGBAcolor],
@@ -269,6 +275,10 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(name)
+        if entity is not None:
+            logger.error(f"addArrow(): An entity named '{name}' already exists.")
+            return False
         angle = np.arange(start=0, stop=tau, step=tau)
         arrow = rr.Arrows3D(
             radii=[[radius]],
@@ -281,6 +291,60 @@ class Gui:
         self._parse_entity(name, arrow, Archetype.ARROWS3D)
         return True
 
+    def _resize_entity(
+        self,
+        entity_name: str,
+        radius: int | float,
+        length: int | float,
+        create_entity: Callable[
+            [str, int | float, int | float, List[int | float]],
+            rr.archetypes.arrows3d.Arrows3D | rr.archetypes.capsules3d.Capsules3D,
+        ],
+        entity_type: Archetype,
+    ) -> bool:
+        """Resize an entity (Arrow, Capsule)"""
+        char_index = entity_name.find("/")
+        # If entity_name contains '/' then search for the scene
+        if char_index != -1 and char_index != len(entity_name) - 1:
+            scene_name = entity_name[:char_index]
+            scene = self._get_scene(scene_name)
+            # Check if scene exists
+            if scene is not None:
+                entity_name = entity_name[char_index + 1 :]
+                entity = self._get_entity(entity_name)
+                # if `entity` exists in `scene` then log it
+                if entity and self._is_entity_in_scene(entity, scene):
+                    new_archetype = create_entity(
+                        entity_name, radius, length, entity.archetype.colors.pa_array
+                    )
+                    entity.archetype = new_archetype
+                    rr.log(entity.name, entity.archetype, recording=scene.rec)
+
+                    logger.info(
+                        f"_resize_entity(): Logging a new {entity_type.name} "
+                        f"named '{entity_name}' in '{scene_name}' scene."
+                    )
+                    return True
+                else:
+                    logger.error(
+                        f"_resize_entity(): {entity_type.name} '{entity_name}' "
+                        f"does not exists in '{scene_name}' scene."
+                    )
+                    return False
+
+        entity = self._get_entity(entity_name)
+        if not entity:
+            logger.error(
+                f"_resize_entity(): {entity_type.name} '{entity_name}' does not exists."
+            )
+            return False
+        new_archetype = create_entity(
+            entity_name, radius, length, entity.archetype.colors.pa_array
+        )
+        entity.archetype = new_archetype
+        self._log_entity(entity)
+        return True
+
     def resizeArrow(
         self, arrowName: str, radius: int | float, length: int | float
     ) -> bool:
@@ -289,7 +353,7 @@ class Gui:
             isinstance(x, (int, float)) for x in [radius, length]
         ), "Parameters 'radius' and 'length' must be a numbers"
 
-        def createArrow(
+        def create_arrow(
             arrowName: str,
             radius: int | float,
             length: int | float,
@@ -307,58 +371,10 @@ class Gui:
             )
             return arrow
 
-        char_index = arrowName.find("/")
-        # If arrowName contains '/' then search for the scene
-        if char_index != -1 and char_index != len(arrowName) - 1:
-            scene_name = arrowName[:char_index]
-            scene = self._get_scene(scene_name)
-            # Check if scene exists
-            if scene is not None:
-                entity_name = arrowName[char_index + 1 :]
-                entity = self._get_entity(entity_name)
-                # if `entity` exists in `scene` then log it
-                if entity and self._is_entity_in_scene(entity, scene):
-                    new_arrow = createArrow(
-                        arrowName, radius, length, entity.archetype.colors.pa_array
-                    )
-                    entity.archetype = new_arrow
-                    rr.log(entity.name, entity.archetype, recording=scene.rec)
-
-                    msg = (
-                        f"resizeArrow('{arrowName}'): Logging new arrow "
-                        f"'{entity_name}' in '{scene_name}' scene."
-                    )
-                    logger.info(msg)
-                    return True
-                else:
-                    msg = (
-                        f"resizeArrow({arrowName}): Arrow '{entity_name}' "
-                        f"does not exists in '{scene_name}' scene."
-                    )
-                    logger.error(msg)
-                    return False
-
-        entity = self._get_entity(arrowName)
-        if not entity:
-            logger.error(f"resizeArrow(): Arrow '{arrowName}' does not exists.")
-            return False
-
-        new_arrow = createArrow(
-            arrowName, radius, length, entity.archetype.colors.pa_array
+        logger.info("resizeArrow(): Call to _resize_entity().")
+        return self._resize_entity(
+            arrowName, radius, length, create_arrow, Archetype.ARROWS3D
         )
-        entity.archetype = new_arrow
-        if entity.scenes:
-            for scene in entity.scenes:
-                rr.log(entity.name, entity.archetype, recording=scene.rec)
-                msg = (
-                    f"resizeArrow(): Logging a new Arrow3D named '{entity.name}' "
-                    f"in '{scene.name}' scene."
-                )
-                logger.info(msg)
-        else:
-            msg = f"resizeArrow(): Resizing an Arrow3D named '{entity.name}'."
-            logger.info(msg)
-        return True
 
     def addCapsule(
         self,
@@ -375,6 +391,10 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(name)
+        if entity is not None:
+            logger.error(f"addCapsule(): An entity named '{name}' already exists.")
+            return False
         capsule = rr.Capsules3D(
             lengths=[height],
             radii=[radius],
@@ -392,7 +412,7 @@ class Gui:
             isinstance(x, (int, float)) for x in [radius, length]
         ), "Parameters 'radius' and 'length' must be a numbers"
 
-        def createCapsule(
+        def create_capsule(
             capsuleName: str,
             radius: int | float,
             length: int | float,
@@ -406,60 +426,10 @@ class Gui:
             )
             return capsule
 
-        char_index = capsuleName.find("/")
-        # If capsuleName contains '/' then search for the scene
-        if char_index != -1 and char_index != len(capsuleName) - 1:
-            scene_name = capsuleName[:char_index]
-            scene = self._get_scene(scene_name)
-            # Check if scene exists
-            if scene is not None:
-                entity_name = capsuleName[char_index + 1 :]
-                entity = self._get_entity(entity_name)
-                # if `entity` exists in `scene` then log it
-                if entity and self._is_entity_in_scene(entity, scene):
-                    new_capsule = createCapsule(
-                        capsuleName, radius, length, entity.archetype.colors.pa_array
-                    )
-                    entity.archetype = new_capsule
-                    rr.log(entity.name, entity.archetype, recording=scene.rec)
-
-                    msg = (
-                        f"resizeCapsule('{capsuleName}'): Logging new Capsules3D "
-                        f"'{entity_name}' in '{scene_name}' scene."
-                    )
-                    logger.info(msg)
-                    return True
-                else:
-                    msg = (
-                        f"resizeCapsule({capsuleName}): Capsules3D '{entity_name}' "
-                        f"does not exists in '{scene_name}' scene."
-                    )
-                    logger.error(msg)
-                    return False
-
-        entity = self._get_entity(capsuleName)
-        if not entity:
-            logger.error(
-                f"resizeCapsule(): Capsules3D '{capsuleName}' does not exists."
-            )
-            return False
-
-        new_capsule = createCapsule(
-            capsuleName, radius, length, entity.archetype.colors.pa_array
+        logger.info("resizeCapsule(): Call to _resize_entity().")
+        return self._resize_entity(
+            capsuleName, radius, length, create_capsule, Archetype.CAPSULES3D
         )
-        entity.archetype = new_capsule
-        if entity.scenes:
-            for scene in entity.scenes:
-                rr.log(entity.name, entity.archetype, recording=scene.rec)
-                msg = (
-                    f"resizeCapsule(): Logging a new Capsules3D named '{entity.name}' "
-                    f"in '{scene.name}' scene."
-                )
-                logger.info(msg)
-        else:
-            msg = f"resizeCapsule(): Resizing an Capsules3D named '{entity.name}'."
-            logger.info(msg)
-        return True
 
     def addLine(
         self,
@@ -479,6 +449,10 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(lineName)
+        if entity is not None:
+            logger.error(f"addLine(): An entity named '{lineName}' already exists.")
+            return False
         line = rr.LineStrips3D(
             [[pos1, pos2]],
             radii=[0.1],
@@ -508,6 +482,12 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(faceName)
+        if entity is not None:
+            logger.error(
+                f"addSquareFace(): An entity named '{faceName}' already exists."
+            )
+            return False
         mesh = rr.Mesh3D(
             vertex_positions=[pos1, pos2, pos3, pos4],
             triangle_indices=[[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]],
@@ -538,11 +518,16 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(faceName)
+        if entity is not None:
+            logger.error(
+                f"addTriangleFace(): An entity named '{faceName}' already exists."
+            )
+            return False
         mesh = rr.Mesh3D(
             vertex_positions=[pos1, pos2, pos3],
             vertex_colors=[RGBAcolor],
         )
-
         self._parse_entity(faceName, mesh, Archetype.MESH3D)
         return True
 
@@ -560,6 +545,10 @@ class Gui:
             RGBAcolor, (list, tuple)
         ), "Parameter 'RGBAcolor' must be a list or tuple"
 
+        entity = self._get_entity(sphereName)
+        if entity is not None:
+            logger.error(f"addSphere(): An entity named '{sphereName}' already exists.")
+            return False
         sphere = rr.Points3D(
             positions=[[0.0, 0.0, 0.0]],
             radii=[[radius]],
@@ -574,50 +563,267 @@ class Gui:
             (scene.rec for scene in self.scene_list if scene.name == recName), None
         )
 
-    def _log_archetype(self, entityName: str, groupName: str) -> bool:
-        entity = self._get_entity(entityName)
-        scene = self._get_scene(groupName)
+    def _group_exists(self, group_name: str) -> bool:
+        for group in self.group_list:
+            if group.name == group_name:
+                return True
 
-        if isinstance(entity.archetype, MeshFromPath):
-            rr.log_file_from_path(
-                file_path=entity.archetype.path, recording=scene.rec.to_native()
+    def _log_entity(self, entity: Entity):
+        """Draw a group entity in the Viewer."""
+        if not entity.scenes:
+            logger.info(
+                f"_log_entity(): Logging entity '{entity.name}' don't have any scenes to be displayed in."
             )
-            logger.info(f"Logging Mesh from file named '{entity.name}'.")
-            return True
-        elif isinstance(entity.archetype, rr.archetypes.arrows3d.Arrows3D):
-            logger.info(f"Logging Arrows3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.boxes3d.Boxes3D):
-            logger.info(f"Logging Boxes3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.capsules3d.Capsules3D):
-            logger.info(f"Logging Capsules3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.line_strips3d.LineStrips3D):
-            logger.info(f"Logging LineStrip3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.mesh3d.Mesh3D):
-            logger.info(f"Logging Mesh3D named '{entity.name}'.")
-        elif isinstance(entity.archetype, rr.archetypes.points3d.Points3D):
-            logger.info(f"Logging Points3D named '{entity.name}'.")
-        else:
             return False
-        entity.addScene(scene)
-        rr.log(
-            entity.name,
-            entity.archetype,
-            recording=scene.rec,
+        for scene in entity.scenes:
+            for log_name in entity.log_name:
+                rr.log(
+                    log_name,
+                    entity.archetype,
+                    recording=scene.rec,
+                )
+            logger.info(
+                f"_log_entity(): Logging entity '{entity.name}' in '{scene.name}' scene."
+            )
+        return True
+
+    def _get_group_list(self, group_name: str) -> List[Group]:
+        """Get groups inside `self.group_List`"""
+        group_list = []
+        for group in self.group_list:
+            if group.name.strip("/").endswith(group_name):
+                group_list.append(group)
+        return group_list
+
+    def _format_string(self, first: str, second: str) -> str:
+        """Add '/' between `first` and `second`."""
+        return first.strip("/") + "/" + second.strip("/")
+
+    def _get_added_groups(self, groupName: str) -> List[Group]:
+        """
+        Get all the nodes named 'groupName',
+            return the list of nodes that are childrens of other nodes.
+        Eg: in this list ["test", "world/test", "map/test"]
+        _choose_group will return ["world/test", "map/test"]
+        """
+
+        g_list = self._get_group_list(groupName)
+        new_g_list = []
+        if len(g_list) == 1:
+            return [g_list[0]]
+        for group in g_list:
+            if "/" in group.name.strip("/"):
+                new_g_list.append(group)
+        return new_g_list
+
+    def _get_group_entities_children(self, group_name: str) -> List[Entity]:
+        """Return all the entities children of a group"""
+
+        children = []
+        for entity in self.entity_list:
+            for log_name in entity.log_name:
+                if group_name in log_name:
+                    children.append(entity)
+        return children
+
+    def _add_entity_to_scene(self, entity: Entity, scene: Scene) -> bool:
+        """Add Entity to Scene"""
+        if scene in entity.scenes and entity.name in entity.log_name:
+            logger.error(
+                f"addToGroup(): Entity '{entity.name}' already in scene '{scene.name}'."
+            )
+            return False
+        entity.add_scene(scene)
+        entity.add_log_name(entity.name)
+        logger.info(
+            f"addToGroup(): Add entity '{entity.name}' to '{scene.name}' scene."
         )
+        self._log_entity(entity)
+        return True
+
+    def _add_entity_to_group(self, entity: Entity, groupName: str) -> bool:
+        """Add Entity to Group"""
+        group_name_list = self._get_added_groups(groupName)
+        for group in group_name_list:
+            for scene in group.scenes:
+                entity.add_scene(scene)
+            log_name = self._format_string(group.name, entity.name)
+            if log_name in entity.log_name:
+                logger.error(
+                    f"addToGroup(): Entity '{entity.name}' already in group '{group.name}'."
+                )
+                return False
+            entity.add_log_name(log_name)
+            self._log_entity(entity)
+        logger.info(
+            f"addToGroup(): Added entity '{entity.name}' to '{groupName}' group."
+        )
+        return True
+
+    def _add_group_to_scene(
+        self, node_name_list: List[Group], scene: Scene, group_name: str
+    ) -> bool:
+        """Add Group to a Scene"""
+        for group in node_name_list:
+            if scene in group.scenes:
+                logger.error(
+                    f"addToGroup(): Group '{group.name}' already in scene '{scene.name}'."
+                )
+                return False
+            group.add_scene(scene)
+            # Add scene for all children of the group
+            children = self._get_group_entities_children(group_name)
+            for child in children:
+                child.add_scene(scene)
+                self._log_entity(child)
+        logger.info(f"addToGroup(): Add group '{group_name}' to '{scene.name}' scene.")
+        return True
+
+    def _add_group_to_group(
+        self,
+        group_name_list: List[Group],
+        node_name_list: List[Group],
+        node_name: str,
+        group_name: str,
+    ) -> bool:
+        """
+        Add Group to Group.
+        If the 'group_name' is already added to other group,
+        we have to make child nodes accordingly :
+            If we have this list of node ["world", "scene/world", "hello/world"],
+            and we want to add the node "test" to "world".
+            We need to create all child nodes : "world/test", "scene/world/test", ...
+        So, we iterate over all nodes that ends with 'group_name' to creates nodes like :
+            'group_name'/'node_name'.
+        """
+        added_group_list = self._get_added_groups(group_name)
+        for added_group in added_group_list:
+            new_group = Group(self._format_string(added_group.name, node_name))
+            for group in group_name_list:
+                for scene in group.scenes:
+                    new_group.add_scene(scene)
+                    # Ensure that the added group 'nodeName' has its `scenes` filled
+                    for group1 in node_name_list:
+                        if group1.name == new_group.name:
+                            logger.error(
+                                f"addToGroup(): Group '{node_name}' already in group '{group_name}'."
+                            )
+                            return False
+                        group1.add_scene(scene)
+            self.group_list.append(new_group)
+        logger.info(f"addToGroup(): Add group '{node_name}' to '{group_name}' group.")
         return True
 
     def addToGroup(self, nodeName: str, groupName: str) -> bool:
         """
-        Actual log of an entity
+        Actual log of entities.
+        Add group1 to a group2 will create another group 'group1/group2'
         """
         assert all(
             isinstance(name, str) for name in [nodeName, groupName]
         ), "Parameters 'nodeName' and 'groupName' must be strings"
 
-        if self._get_scene(groupName) is None:
-            logger.error(f"addToGroup(): Scene '{groupName}' does not exists.")
+        entity = self._get_entity(nodeName)
+        node_name_list = self._get_group_list(nodeName)
+        if entity is None and not node_name_list:
+            logger.error(f"addToGroup(): Node '{nodeName}' does not exists.")
             return False
-        if not self._get_entity(nodeName):
-            logger.error(f"addToGroup(): Entity '{nodeName}' does not exists.")
+
+        scene = self._get_scene(groupName)
+        group_name_list = self._get_group_list(groupName)
+        if not group_name_list and scene is None:
+            logger.error(f"addToGroup(): Group '{groupName}' does not exists.")
             return False
-        return self._log_archetype(nodeName, groupName)
+        ret = True
+        if entity:
+            if scene is not None:
+                ret = self._add_entity_to_scene(entity, scene)
+            elif group_name_list:
+                ret = self._add_entity_to_group(entity, groupName)
+            else:
+                return False
+        elif node_name_list:
+            if scene is not None:
+                ret = self._add_group_to_scene(node_name_list, scene, nodeName)
+            elif group_name_list:
+                ret = self._add_group_to_group(
+                    group_name_list, node_name_list, nodeName, groupName
+                )
+            else:
+                return False
+        self._draw_spacial_view_content()
+        return ret
+
+    def createGroup(self, groupName: str) -> bool:
+        assert isinstance(groupName, str), "Paramter 'groupName' must be a string"
+
+        groups = self._get_group_list(groupName)
+        if groups:
+            logger.error(f"createGroup(): Group '{groupName}' already exists.")
+            return False
+        self.group_list.append(Group(groupName))
+        logger.info(f"createGroup(): create group '{groupName}'.")
+        return True
+
+    def _draw_spacial_view_content(self):
+        """
+        Each `Spatial3DView` has its own content,
+        after logging entity (rerun archetype or group),
+        you can choose which object you want to display/hide.
+        See [`Spatial3DView`](https://ref.rerun.io/docs/python/0.20.3/common/blueprint_views/#rerun.blueprint.views.Spatial3DView)
+        and [`SpaceViewContents`](https://ref.rerun.io/docs/python/0.20.3/common/blueprint_archetypes/#rerun.blueprint.archetypes.SpaceViewContents).
+        """
+
+        def make_space_view_content(scene: Scene) -> List[str]:
+            """Make the SpaceViewContens for a given Scene."""
+            content = []
+            for entity in self.entity_list:
+                if scene in entity.scenes:
+                    for log_name in entity.log_name:
+                        content.append("+ " + log_name)
+            for group in self.group_list:
+                content.append("+ " + group.name)
+            return content
+
+        # There is a bug with rerun 0.20 : when sending
+        # different blueprints to recordings that are
+        # in the same application - 03/12/2024
+        # Linked issue : https://github.com/rerun-io/rerun/issues/8287
+        for scene in self.scene_list:
+            content = make_space_view_content(scene)
+            rr.send_blueprint(
+                rrb.Spatial3DView(contents=content),
+                recording=scene.rec,
+            )
+
+    def deleteNode(self, nodeName: str, all: bool) -> bool:
+        assert isinstance(nodeName, str), "Parameter 'nodeName' must be a string"
+        assert isinstance(all, bool), "Parameter 'all' must be a boolean"
+
+        groups = self._get_group_list(nodeName)
+        entity = self._get_entity(nodeName)
+        if not groups and entity is None:
+            logger.error(f"deleteNode(): Node '{nodeName}' does not exists.")
+            return False
+        for group in groups:
+            if group in self.group_list:
+                self.group_list.remove(group)
+                # Remove all chidren of group
+                children = self._get_group_entities_children(group.name)
+                if all:
+                    for child in children:
+                        if child in self.entity_list:
+                            self.entity_list.remove(child)
+                else:
+                    for child in children:
+                        for log_name in child.log_name:
+                            if group.name in log_name:
+                                child.log_name.remove(log_name)
+                logger.info(
+                    f"deleteNode(): Successfully removed node group '{nodeName}'."
+                )
+        if entity is not None:
+            self.entity_list.remove(entity)
+            logger.info(f"deleteNode(): Successfully removed node entity '{nodeName}'.")
+        self._draw_spacial_view_content()
+        return True
