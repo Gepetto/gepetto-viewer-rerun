@@ -3,9 +3,10 @@
 ## Installation
 
 ```bash
-pip install build
-python -m build
+pip install git+https://github.com/Gepetto/gepetto-viewer-rerun
 ```
+
+**Make sure to install [rerun-loader-collada](https://github.com/Gepetto/rerun-loader-collada).**
 
 ## Usage
 ```bash
