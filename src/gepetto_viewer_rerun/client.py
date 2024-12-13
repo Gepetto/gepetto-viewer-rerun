@@ -298,52 +298,19 @@ class Gui:
         entity_name: str,
         radius: int | float,
         length: int | float,
-        create_entity: Callable[
-            [str, int | float, int | float, List[int | float]],
-            rr.archetypes.arrows3d.Arrows3D | rr.archetypes.capsules3d.Capsules3D,
+        resize_archetype: Callable[
+            [rr.archetypes, int | float, int | float], rr.Arrows3D | rr.Capsules3D
         ],
         entity_type: Archetype,
     ) -> bool:
         """Resize an entity (Arrow, Capsule)"""
-        char_index = entity_name.find("/")
-        # If entity_name contains '/' then search for the scene
-        if char_index != -1 and char_index != len(entity_name) - 1:
-            scene_name = entity_name[:char_index]
-            scene = self._get_scene(scene_name)
-            # Check if scene exists
-            if scene is not None:
-                entity_name = entity_name[char_index + 1 :]
-                entity = self._get_entity(entity_name)
-                # if `entity` exists in `scene` then log it
-                if entity and self._is_entity_in_scene(entity, scene):
-                    new_archetype = create_entity(
-                        entity_name, radius, length, entity.archetype.colors.pa_array
-                    )
-                    entity.archetype = new_archetype
-                    rr.log(entity.name, entity.archetype, recording=scene.rec)
-
-                    logger.info(
-                        f"_resize_entity(): Logging a new {entity_type.name} "
-                        f"named '{entity_name}' in '{scene_name}' scene."
-                    )
-                    return True
-                else:
-                    logger.error(
-                        f"_resize_entity(): {entity_type.name} '{entity_name}' "
-                        f"does not exists in '{scene_name}' scene."
-                    )
-                    return False
-
         entity = self._get_entity(entity_name)
         if not entity:
             logger.error(
                 f"_resize_entity(): {entity_type.name} '{entity_name}' does not exists."
             )
             return False
-        new_archetype = create_entity(
-            entity_name, radius, length, entity.archetype.colors.pa_array
-        )
-        entity.archetype = new_archetype
+        resize_archetype(entity.archetype, radius, length)
         self._log_entity(entity)
         return True
 
@@ -355,27 +322,22 @@ class Gui:
             isinstance(x, (int, float)) for x in [radius, length]
         ), "Parameters 'radius' and 'length' must be a numbers"
 
-        def create_arrow(
-            arrowName: str,
+        def resize_arrow(
+            arrow: rr.Arrows3D,
             radius: int | float,
             length: int | float,
-            colors: List[int | float],
         ) -> rr.archetypes.arrows3d.Arrows3D:
             angle = np.arange(start=0, stop=tau, step=tau)
             vectors = np.column_stack(
                 [np.sin(angle) * length, np.zeros(1), np.cos(angle) * length]
             )
-            arrow = rr.Arrows3D(
-                radii=[[radius]],
-                vectors=vectors,
-                colors=colors,
-                labels=[arrowName],
-            )
+            arrow.radii = [radius]
+            arrow.vectors = vectors
             return arrow
 
         logger.info("resizeArrow(): Call to _resize_entity().")
         return self._resize_entity(
-            arrowName, radius, length, create_arrow, Archetype.ARROWS3D
+            arrowName, radius, length, resize_arrow, Archetype.ARROWS3D
         )
 
     def addCapsule(
@@ -414,23 +376,18 @@ class Gui:
             isinstance(x, (int, float)) for x in [radius, length]
         ), "Parameters 'radius' and 'length' must be a numbers"
 
-        def create_capsule(
-            capsuleName: str,
+        def resize_capsule(
+            capsule: rr.Capsules3D,
             radius: int | float,
             length: int | float,
-            colors: List[int | float],
         ) -> rr.archetypes.capsules3d.Capsules3D:
-            capsule = rr.Capsules3D(
-                radii=[radius],
-                lengths=length,
-                colors=colors,
-                labels=[capsuleName],
-            )
+            capsule.radii = [radius]
+            capsule.lengths = [length]
             return capsule
 
         logger.info("resizeCapsule(): Call to _resize_entity().")
         return self._resize_entity(
-            capsuleName, radius, length, create_capsule, Archetype.CAPSULES3D
+            capsuleName, radius, length, resize_capsule, Archetype.CAPSULES3D
         )
 
     def addLine(
