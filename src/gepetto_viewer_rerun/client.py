@@ -1056,3 +1056,14 @@ class Gui:
             )
             self._log_entity(entity)
         return True
+
+class _GhostGraphicalInterface:
+    def __init__(self):
+        def nofunc(*args):
+            """Connection to the GUI failed. Docstring not available."""
+            pass
+
+        for d_func in filter(
+            lambda x: x.startswith("_d_"), Gui.__dict__.keys()
+        ):
+            self.__dict__[d_func[3:]] = nofunc
