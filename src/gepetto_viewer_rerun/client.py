@@ -619,8 +619,9 @@ class Gui:
                         recording=scene.rec,
                     )
                 if isinstance(entity.archetype, (MeshFromPath, UrdfFromPath)):
-                    # Here, if entity_path_prefixis specified,
-                    # it's used as entity_path (only in collada loader)
+                    # Here, entity_path_prefix is used as entity_path
+                    # (only for collada loader)
+                    # cf: https://github.com/Gepetto/rerun-loader-collada
                     rr.log_file_from_path(
                         file_path=entity.archetype.path,
                         entity_path_prefix=log_name,
