@@ -950,12 +950,11 @@ class Gui:
             """Make the SpaceViewContens for a given Scene."""
             content = []
             for entity in self.entity_list:
-                if isinstance(entity.archetype, UrdfFromPath):
-                    if scene in entity.scenes:
+                if scene in entity.scenes:
+                    if isinstance(entity.archetype, (UrdfFromPath, MeshFromPath)):
                         for log_name in entity.log_name:
                             content.append("+ " + log_name + "/**")
-                else:
-                    if scene in entity.scenes:
+                    else:
                         for log_name in entity.log_name:
                             content.append("+ " + log_name)
             for group in self.group_list:
