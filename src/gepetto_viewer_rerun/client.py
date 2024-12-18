@@ -8,7 +8,7 @@ import numpy as np
 import rerun as rr
 import rerun.blueprint as rrb
 
-from .entity import Entity, Group, MeshFromPath
+from .entity import Entity, Group, MeshFromPath, UrdfFromPath
 from .scene import Scene, Window
 
 logger = logging.getLogger(__name__)
@@ -23,6 +23,7 @@ class Archetype(Enum):
     MESH3D = 5
     MESH_FROM_PATH = 6
     POINTS3D = 7
+    URDF_FROM_PATH = 8
 
 
 class Client:
@@ -184,7 +185,10 @@ class Gui:
             scene = self._get_scene(node_name)
             if scene is not None:
                 entity = create_entity(archetypeName[char_index + 1 :])
-                if archetypeType != Archetype.MESH_FROM_PATH:
+                if archetypeType not in (
+                    Archetype.MESH_FROM_PATH,
+                    Archetype.URDF_FROM_PATH,
+                ):
                     entity.add_log_name(entity.name)
                 logger.info(
                     f"_parse_entity(): Creates entity {archetypeName} of type {archetypeType.name}, "
@@ -693,6 +697,18 @@ class Gui:
             self._parse_entity(meshName, mesh, Archetype.ASSET3D)
         return True
 
+    def addURDF(self, robotName: str, urdfFilePath: str) -> bool:
+        assert isinstance(robotName, str), "Parameter 'robotName' must be a string"
+        assert isinstance(
+            urdfFilePath, str
+        ), "Parameter 'urdfFilePath' must be a string"
+
+        if not self.createGroup(robotName):
+            return False
+        urdf = UrdfFromPath(urdfFilePath)
+        self._parse_entity(robotName, urdf, Archetype.URDF_FROM_PATH)
+        return True
+
     def _get_recording(self, recName: str) -> rr.RecordingStream | None:
         return next(
             (scene.rec for scene in self.scene_list if scene.name == recName), None
@@ -722,8 +738,10 @@ class Gui:
                         transform,
                         recording=scene.rec,
                     )
-                if isinstance(entity.archetype, MeshFromPath):
-                    # Here, if entity_path_prefixis specified, it's used as entity_path
+                if isinstance(entity.archetype, (MeshFromPath, UrdfFromPath)):
+                    # Here, entity_path_prefix is used as entity_path
+                    # (only for collada loader)
+                    # cf: https://github.com/Gepetto/rerun-loader-collada
                     rr.log_file_from_path(
                         file_path=entity.archetype.path,
                         entity_path_prefix=log_name,
@@ -933,8 +951,12 @@ class Gui:
             content = []
             for entity in self.entity_list:
                 if scene in entity.scenes:
-                    for log_name in entity.log_name:
-                        content.append("+ " + log_name)
+                    if isinstance(entity.archetype, (UrdfFromPath, MeshFromPath)):
+                        for log_name in entity.log_name:
+                            content.append("+ " + log_name + "/**")
+                    else:
+                        for log_name in entity.log_name:
+                            content.append("+ " + log_name)
             for group in self.group_list:
                 content.append("+ " + group.name)
             return content

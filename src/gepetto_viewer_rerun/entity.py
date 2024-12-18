@@ -50,6 +50,11 @@ class MeshFromPath:
 
 
 @dataclass
+class UrdfFromPath:
+    path: str | Path
+
+
+@dataclass
 class Group:
     name: str
     scenes: List[Scene] = field(default_factory=list)
