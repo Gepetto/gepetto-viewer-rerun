@@ -27,6 +27,8 @@ class Archetype(Enum):
 
 
 class Client:
+    """Provide a gui"""
+
     def __init__(self):
         self.gui = Gui()
 
@@ -38,9 +40,11 @@ class Gui:
     def __init__(self):
         """
         scene_list : List of `Scene` class (name and associated recording)
-        window_list : List of all window class
-        entity_list : List containing every Rerun objects created wrapped in Entity
+        window_list : List of all window class (name and associated scenes)
+        entity_list : List containing every Rerun objects created, wrapped in Entity
         group_list: List of every created Group
+
+        The logic behind creating nodes hierarchy is described in Entity class.
         """
 
         self.scene_list = []
@@ -161,10 +165,7 @@ class Gui:
         Parse archetype name and log (or not) archetype :
             - if there is a scene specified in archetypeName :  <scene>/name
                 it will log directly the archetype into the scene
-            - if there is a '/' : <not a scene>/name
-                it will need addToGroup() to be log in a scene
-                every '/' will interpreted as a tree
-            - if there is no '/', archetype will require addToGroup() to be logged
+            - else archetype will require addToGroup() to be logged to Rerun
         """
 
         def create_entity(entity_name) -> Entity:
@@ -742,6 +743,17 @@ class Gui:
                     # Here, entity_path_prefix is used as entity_path
                     # (only for collada loader)
                     # cf: https://github.com/Gepetto/rerun-loader-collada
+
+                    # Moreover, to_native() is called to overcome
+                    # https://github.com/rerun-io/rerun/issues/8167,
+                    # this bug should be fixed in Rerun 0.21.
+                    # Replace the following lines by :
+
+                    # rr.log_file_from_path(
+                    #     file_path=entity.archetype.path,
+                    #     entity_path_prefix=log_name,
+                    #     recording=scene.rec,
+                    # )
                     rr.log_file_from_path(
                         file_path=entity.archetype.path,
                         entity_path_prefix=log_name,
@@ -889,7 +901,6 @@ class Gui:
     def addToGroup(self, nodeName: str, groupName: str) -> bool:
         """
         Actual log of entities.
-        Add group1 to a group2 will create another group 'group1/group2'
         """
         assert all(
             isinstance(name, str) for name in [nodeName, groupName]
@@ -962,9 +973,10 @@ class Gui:
             return content
 
         # There is a bug with rerun 0.20 : when sending
-        # different blueprints to recordings that are
+        # different blueprints to multiple recordings that are
         # in the same application - 03/12/2024
         # Linked issue : https://github.com/rerun-io/rerun/issues/8287
+        # There is nothing to change when fixed.
         for scene in self.scene_list:
             content = make_space_view_content(scene)
             rr.send_blueprint(
