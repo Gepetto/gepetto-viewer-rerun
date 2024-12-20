@@ -6,7 +6,7 @@
 pip install git+https://github.com/Gepetto/gepetto-viewer-rerun
 ```
 
-**Make sure to install [rerun-loader-collada](https://github.com/Gepetto/rerun-loader-collada) and [rerun-loader-urdf](https://github.com/rerun-io/rerun-loader-python-example-urdf).**
+**Make sure to install [rerun-loader-collada](https://github.com/Gepetto/rerun-loader-collada) and [rerun-loader-urdf](https://github.com/Gepetto/rerun-loader-urdf).**
 
 ## Usage
 ```bash
