@@ -5,6 +5,8 @@ from typing import List
 
 @dataclass
 class Scene:
+    """Scenes and their associated recording"""
+
     name: str
     rec: rr.RecordingStream = None
 
@@ -14,5 +16,7 @@ class Scene:
 
 @dataclass
 class Window:
+    """Windows and their associated scenes"""
+
     name: str
     scenes: List[Scene] | None = None
