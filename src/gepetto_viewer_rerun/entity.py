@@ -22,9 +22,9 @@ class Entity:
     configuration: List[int | float] = field(default_factory=list)
 
     def add_scene(self, scene: Scene):
-        assert isinstance(
-            scene, Scene
-        ), "Entity.add_scene() parameter 'scene' must be of type 'Scene'"
+        assert isinstance(scene, Scene), (
+            "Entity.add_scene() parameter 'scene' must be of type 'Scene'"
+        )
 
         if scene not in self.scenes:
             self.scenes.append(scene)
@@ -63,9 +63,9 @@ class Group:
 
     def add_scene(self, scene: Scene):
         """Add `scene` to self.scenes."""
-        assert isinstance(
-            scene, Scene
-        ), "Group.add_scene(): Parameter 'scene' must be a `Scene`"
+        assert isinstance(scene, Scene), (
+            "Group.add_scene(): Parameter 'scene' must be a `Scene`"
+        )
 
         if scene not in self.scenes:
             self.scenes.append(scene)

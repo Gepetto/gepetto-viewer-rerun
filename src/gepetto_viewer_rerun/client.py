@@ -109,9 +109,9 @@ class Gui:
                 return window
 
     def addSceneToWindow(self, sceneName: str, wid: str) -> bool:
-        assert all(
-            isinstance(name, str) for name in [sceneName, wid]
-        ), "Parameters 'sceneName' and 'wid' must be strings"
+        assert all(isinstance(name, str) for name in [sceneName, wid]), (
+            "Parameters 'sceneName' and 'wid' must be strings"
+        )
 
         scene = self._get_scene(sceneName)
         if scene is None:
@@ -131,9 +131,9 @@ class Gui:
 
     def setBackgroundColor(self, wid: str, RGBAcolor: List[int | float]):
         assert isinstance(wid, str), "Parameter 'wid' must be a string"
-        assert isinstance(
-            RGBAcolor, (list, tuple)
-        ), "Parameter 'RGBAcolor' must be a list or tuple"
+        assert isinstance(RGBAcolor, (list, tuple)), (
+            "Parameter 'RGBAcolor' must be a list or tuple"
+        )
 
         import rerun.blueprint as rrb
 
@@ -143,7 +143,7 @@ class Gui:
             return False
         if not window.scenes:
             logger.error(
-                "setBackgroundColor(): Window " f"'{wid}' does not contain any scenes."
+                f"setBackgroundColor(): Window '{wid}' does not contain any scenes."
             )
             return False
 
@@ -175,9 +175,9 @@ class Gui:
             return entity
 
         assert archetype is not None, "_parse_entity(): 'entity' must not be None"
-        assert isinstance(
-            archetypeType, Archetype
-        ), "_parse_entity(): 'archetypeType' must be of type `enum Archetype`"
+        assert isinstance(archetypeType, Archetype), (
+            "_parse_entity(): 'archetypeType' must be of type `enum Archetype`"
+        )
 
         char_index = archetypeName.find("/")
         # If archetypeName contains '/' then search for the node
@@ -250,9 +250,9 @@ class Gui:
         assert all(
             isinstance(x, (int, float)) for x in [boxSize1, boxSize2, boxSize3]
         ), "Parameters 'boxSize' must be a numbers"
-        assert isinstance(
-            RGBAcolor, (list, tuple)
-        ), "Parameter 'RGBAcolor' must be a list or tuple"
+        assert isinstance(RGBAcolor, (list, tuple)), (
+            "Parameter 'RGBAcolor' must be a list or tuple"
+        )
 
         entity = self._get_entity(boxName)
         if entity is not None:
@@ -275,12 +275,12 @@ class Gui:
         RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
-        assert all(
-            isinstance(x, (int, float)) for x in [radius, length]
-        ), "Parameters 'radius' and 'length' must be a numbers"
-        assert isinstance(
-            RGBAcolor, (list, tuple)
-        ), "Parameter 'RGBAcolor' must be a list or tuple"
+        assert all(isinstance(x, (int, float)) for x in [radius, length]), (
+            "Parameters 'radius' and 'length' must be a numbers"
+        )
+        assert isinstance(RGBAcolor, (list, tuple)), (
+            "Parameter 'RGBAcolor' must be a list or tuple"
+        )
 
         entity = self._get_entity(name)
         if entity is not None:
@@ -323,9 +323,9 @@ class Gui:
         self, arrowName: str, radius: int | float, length: int | float
     ) -> bool:
         assert isinstance(arrowName, str), "Parameter 'arrowName' must be a string"
-        assert all(
-            isinstance(x, (int, float)) for x in [radius, length]
-        ), "Parameters 'radius' and 'length' must be a numbers"
+        assert all(isinstance(x, (int, float)) for x in [radius, length]), (
+            "Parameters 'radius' and 'length' must be a numbers"
+        )
 
         def resize_arrow(
             arrow: rr.Arrows3D,
@@ -353,12 +353,12 @@ class Gui:
         RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
-        assert all(
-            isinstance(x, (int, float)) for x in [radius, height]
-        ), "Parameters 'radius' and 'height must be a numbers"
-        assert isinstance(
-            RGBAcolor, (list, tuple)
-        ), "Parameter 'RGBAcolor' must be a list or tuple"
+        assert all(isinstance(x, (int, float)) for x in [radius, height]), (
+            "Parameters 'radius' and 'height must be a numbers"
+        )
+        assert isinstance(RGBAcolor, (list, tuple)), (
+            "Parameter 'RGBAcolor' must be a list or tuple"
+        )
 
         entity = self._get_entity(name)
         if entity is not None:
@@ -377,9 +377,9 @@ class Gui:
         self, capsuleName: str, radius: int | float, length: int | float
     ) -> bool:
         assert isinstance(capsuleName, str), "Parameter 'capsuleName' must be a string"
-        assert all(
-            isinstance(x, (int, float)) for x in [radius, length]
-        ), "Parameters 'radius' and 'length' must be a numbers"
+        assert all(isinstance(x, (int, float)) for x in [radius, length]), (
+            "Parameters 'radius' and 'length' must be a numbers"
+        )
 
         def resize_capsule(
             capsule: rr.Capsules3D,
@@ -403,15 +403,15 @@ class Gui:
         RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(lineName, str), "Parameter 'lineName' must be a string"
-        assert all(
-            isinstance(x, (list, tuple)) for x in [pos1, pos2]
-        ), "Parameters 'pos1' and 'pos2' must be a list or tuple of numbers"
-        assert all(
-            isinstance(nb, (int, float)) for x in [pos1, pos2] for nb in x
-        ), "Parameters 'pos1' and 'pos2' must be a list or tuple of numbers"
-        assert isinstance(
-            RGBAcolor, (list, tuple)
-        ), "Parameter 'RGBAcolor' must be a list or tuple"
+        assert all(isinstance(x, (list, tuple)) for x in [pos1, pos2]), (
+            "Parameters 'pos1' and 'pos2' must be a list or tuple of numbers"
+        )
+        assert all(isinstance(nb, (int, float)) for x in [pos1, pos2] for nb in x), (
+            "Parameters 'pos1' and 'pos2' must be a list or tuple of numbers"
+        )
+        assert isinstance(RGBAcolor, (list, tuple)), (
+            "Parameter 'RGBAcolor' must be a list or tuple"
+        )
 
         entity = self._get_entity(lineName)
         if entity is not None:
@@ -428,9 +428,9 @@ class Gui:
 
     def setLineStartPoint(self, lineName: str, pos1: List[int | float]) -> bool:
         assert isinstance(lineName, str), "Parameter 'lineName' must be a string"
-        assert isinstance(
-            pos1, (list, tuple)
-        ), "Parameters 'pos1' must be a list or tuple of numbers"
+        assert isinstance(pos1, (list, tuple)), (
+            "Parameters 'pos1' must be a list or tuple of numbers"
+        )
 
         line = self._get_entity(lineName)
         if line is None:
@@ -453,9 +453,9 @@ class Gui:
 
     def setLineEndPoint(self, lineName: str, pos2: List[int | float]) -> bool:
         assert isinstance(lineName, str), "Parameter 'lineName' must be a string"
-        assert isinstance(
-            pos2, (list, tuple)
-        ), "Parameters 'pos1' must be a list or tuple of numbers"
+        assert isinstance(pos2, (list, tuple)), (
+            "Parameters 'pos1' must be a list or tuple of numbers"
+        )
 
         line = self._get_entity(lineName)
         if line is None:
@@ -480,9 +480,9 @@ class Gui:
         self, lineName: str, pos1: List[int | float], pos2: List[int | float]
     ) -> bool:
         assert isinstance(lineName, str), "Parameter 'lineName' must be a string"
-        assert isinstance(
-            (pos1, pos2), (list, tuple)
-        ), "Parameters 'pos' must be a list or tuple of numbers"
+        assert isinstance((pos1, pos2), (list, tuple)), (
+            "Parameters 'pos' must be a list or tuple of numbers"
+        )
 
         line = self._get_entity(lineName)
         if line is None:
@@ -514,15 +514,15 @@ class Gui:
         RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(faceName, str), "Parameter 'faceName' must be a string"
-        assert all(
-            isinstance(x, (list, tuple)) for x in [pos1, pos2, pos3, pos4]
-        ), "Parameters 'pos' must be a list or tuple of numbers"
+        assert all(isinstance(x, (list, tuple)) for x in [pos1, pos2, pos3, pos4]), (
+            "Parameters 'pos' must be a list or tuple of numbers"
+        )
         assert all(
             isinstance(nb, (int, float)) for x in [pos1, pos2, pos3, pos4] for nb in x
         ), "Parameters 'pos' must be a list or tuple of numbers"
-        assert isinstance(
-            RGBAcolor, (list, tuple)
-        ), "Parameter 'RGBAcolor' must be a list or tuple"
+        assert isinstance(RGBAcolor, (list, tuple)), (
+            "Parameter 'RGBAcolor' must be a list or tuple"
+        )
 
         entity = self._get_entity(faceName)
         if entity is not None:
@@ -547,18 +547,18 @@ class Gui:
         RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(faceName, str), "Parameter 'faceName' must be a string"
-        assert all(
-            isinstance(x, (list, tuple)) for x in [pos1, pos2, pos3]
-        ), "Parameters 'pos' must be a list or tuple of numbers"
+        assert all(isinstance(x, (list, tuple)) for x in [pos1, pos2, pos3]), (
+            "Parameters 'pos' must be a list or tuple of numbers"
+        )
         assert all(
             isinstance(nb, (int, float)) for x in [pos1, pos2, pos3] for nb in x
         ), "Parameters 'pos' must be a list or tuple of numbers"
-        assert all(
-            len(x) == 3 for x in [pos1, pos2, pos3]
-        ), "Parameter 'pos' must be of length 3"
-        assert isinstance(
-            RGBAcolor, (list, tuple)
-        ), "Parameter 'RGBAcolor' must be a list or tuple"
+        assert all(len(x) == 3 for x in [pos1, pos2, pos3]), (
+            "Parameter 'pos' must be of length 3"
+        )
+        assert isinstance(RGBAcolor, (list, tuple)), (
+            "Parameter 'RGBAcolor' must be a list or tuple"
+        )
 
         entity = self._get_entity(faceName)
         if entity is not None:
@@ -580,12 +580,12 @@ class Gui:
         RGBAcolor: List[int | float],
     ) -> bool:
         assert isinstance(sphereName, str), "Parameter 'sphereName' must be a string"
-        assert isinstance(
-            radius, (int, float)
-        ), "Parameters 'radius' and 'length' must be a numbers"
-        assert isinstance(
-            RGBAcolor, (list, tuple)
-        ), "Parameter 'RGBAcolor' must be a list or tuple"
+        assert isinstance(radius, (int, float)), (
+            "Parameters 'radius' and 'length' must be a numbers"
+        )
+        assert isinstance(RGBAcolor, (list, tuple)), (
+            "Parameter 'RGBAcolor' must be a list or tuple"
+        )
 
         entity = self._get_entity(sphereName)
         if entity is not None:
@@ -604,18 +604,18 @@ class Gui:
         self, name: str, pos: List[List[int | float]], RGBAcolor: List[int | float]
     ) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
-        assert isinstance(
-            pos, (list, tuple)
-        ), "Parameters 'pos' must be a list or tuple of numbers"
-        assert all(
-            isinstance(pos, (list, tuple)) for pos in pos
-        ), "Parameters 'pos' must be a list or tuple of numbers"
-        assert all(
-            isinstance(nb, (int, float)) for list in pos for nb in list
-        ), "Parameters 'pos1' and 'pos2' must be a list or tuple of numbers"
-        assert isinstance(
-            RGBAcolor, (list, tuple)
-        ), "Parameter 'RGBAcolor' must be a list or tuple"
+        assert isinstance(pos, (list, tuple)), (
+            "Parameters 'pos' must be a list or tuple of numbers"
+        )
+        assert all(isinstance(pos, (list, tuple)) for pos in pos), (
+            "Parameters 'pos' must be a list or tuple of numbers"
+        )
+        assert all(isinstance(nb, (int, float)) for list in pos for nb in list), (
+            "Parameters 'pos1' and 'pos2' must be a list or tuple of numbers"
+        )
+        assert isinstance(RGBAcolor, (list, tuple)), (
+            "Parameter 'RGBAcolor' must be a list or tuple"
+        )
 
         entity = self._get_entity(name)
         if entity is not None:
@@ -632,9 +632,9 @@ class Gui:
 
     def setCurveColors(self, name: str, color: List[int | float]) -> bool:
         assert isinstance(name, str), "Parameter 'name' must be a string"
-        assert isinstance(
-            color, (list, tuple)
-        ), "Parameter 'RGBAcolor' must be a list or tuple"
+        assert isinstance(color, (list, tuple)), (
+            "Parameter 'RGBAcolor' must be a list or tuple"
+        )
 
         entity = self._get_entity(name)
         if entity is None:
@@ -668,9 +668,9 @@ class Gui:
 
     def setCurvePoints(self, name: str, pos: List[List[int | float]]) -> bool:
         assert isinstance(name, str), "Parameter 'curveName' must be a string"
-        assert isinstance(
-            pos, (list, tuple)
-        ), "Parameter 'pos' must be a list of positions"
+        assert isinstance(pos, (list, tuple)), (
+            "Parameter 'pos' must be a list of positions"
+        )
 
         entity = self._get_entity(name)
         if entity is None:
@@ -700,9 +700,9 @@ class Gui:
 
     def addURDF(self, robotName: str, urdfFilePath: str) -> bool:
         assert isinstance(robotName, str), "Parameter 'robotName' must be a string"
-        assert isinstance(
-            urdfFilePath, str
-        ), "Parameter 'urdfFilePath' must be a string"
+        assert isinstance(urdfFilePath, str), (
+            "Parameter 'urdfFilePath' must be a string"
+        )
 
         if not self.createGroup(robotName):
             return False
@@ -902,9 +902,9 @@ class Gui:
         """
         Actual log of entities.
         """
-        assert all(
-            isinstance(name, str) for name in [nodeName, groupName]
-        ), "Parameters 'nodeName' and 'groupName' must be strings"
+        assert all(isinstance(name, str) for name in [nodeName, groupName]), (
+            "Parameters 'nodeName' and 'groupName' must be strings"
+        )
 
         entity = self._get_entity(nodeName)
         node_name_list = self._get_group_list(nodeName)
@@ -1020,12 +1020,12 @@ class Gui:
         self, nodeName: str, configuration: List[int | float]
     ) -> bool:
         assert isinstance(nodeName, str), "Parameter 'nodeName' must be a string"
-        assert isinstance(
-            configuration, (list, tuple)
-        ), "Parameter 'configuration' must be a list or tuple of number"
-        assert (
-            len(configuration) == 7
-        ), "Parameter 'configuration' must be a list of length 7"
+        assert isinstance(configuration, (list, tuple)), (
+            "Parameter 'configuration' must be a list or tuple of number"
+        )
+        assert len(configuration) == 7, (
+            "Parameter 'configuration' must be a list of length 7"
+        )
 
         entity = self._get_entity(nodeName)
         if entity is None:
@@ -1042,15 +1042,15 @@ class Gui:
     def applyConfigurations(
         self, nodeName: List[str], configurations: List[List[int | float]]
     ) -> bool:
-        assert isinstance(
-            nodeName, (list, tuple)
-        ), "Parameter 'nodeName' must be a list of strings"
-        assert isinstance(
-            configurations, (list, tuple)
-        ), "Parameter 'configurations' must be a list or tuple of number"
-        assert len(nodeName) == len(
-            configurations
-        ), "Parameter nodeName and configurations must be the same size"
+        assert isinstance(nodeName, (list, tuple)), (
+            "Parameter 'nodeName' must be a list of strings"
+        )
+        assert isinstance(configurations, (list, tuple)), (
+            "Parameter 'configurations' must be a list or tuple of number"
+        )
+        assert len(nodeName) == len(configurations), (
+            "Parameter nodeName and configurations must be the same size"
+        )
 
         for node_name, config in zip(nodeName, configurations):
             assert len(config) == 7, "Configurations must be list of length 7"
